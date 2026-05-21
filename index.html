@@ -126,6 +126,9 @@
   .dist-outcome{margin-top:10px; font-size:13px; font-weight:700; padding:9px 11px; border-radius:10px; line-height:1.5;}
   .dist-outcome.win{background:var(--green-l); color:var(--green-d);}
   .dist-outcome.loss{background:#ffdfe0; color:var(--red-d);}
+  /* intro (màn dạy thuần) */
+  .intro-text{font-size:15px; line-height:1.75; color:#3c3c3c; background:#f7f7f7; border-radius:14px; padding:16px; margin-top:6px;}
+  .intro-text b{color:#1a1a1a;}
 
   /* ---- Feedback bar ---- */
   .feedback{
@@ -387,6 +390,46 @@ function candleAt(clientX){
   return -1;
 }
 
+/* ---------- Vẽ hình minh hoạ cho bài intro (giải phẫu cây nến) ---------- */
+function drawIntroIllus(kind){
+  CV = document.getElementById('cv');
+  const card = document.getElementById('chartCard');
+  const W = card.clientWidth, H = 300, dpr = window.devicePixelRatio||1;
+  CV.width = W*dpr; CV.height = H*dpr; CV.style.height = H+'px';
+  CTX = CV.getContext('2d'); CTX.setTransform(1,0,0,1,0,0); CTX.scale(dpr,dpr);
+  CTX.clearRect(0,0,W,H); CTX.textBaseline='middle';
+
+  const candle=(cx,bw,yHigh,yTop,yBot,yLow,green)=>{
+    const col = green?'#58cc02':'#ff4b4b';
+    CTX.strokeStyle=col; CTX.lineWidth=4;
+    CTX.beginPath(); CTX.moveTo(cx,yHigh); CTX.lineTo(cx,yLow); CTX.stroke();
+    CTX.fillStyle=col; CTX.fillRect(cx-bw/2,yTop,bw,yBot-yTop);
+  };
+  const dash=(x1,y,x2)=>{ CTX.strokeStyle='#cfcfcf'; CTX.lineWidth=1.5;
+    CTX.beginPath(); CTX.moveTo(x1,y); CTX.lineTo(x2,y); CTX.stroke(); };
+
+  if(kind==='anatomy'){
+    const cx=W*0.5, bw=46, yHigh=36, yTop=92, yBot=210, yLow=266;
+    candle(cx,bw,yHigh,yTop,yBot,yLow,true);
+    CTX.font='bold 13px -apple-system,Segoe UI,Arial'; CTX.fillStyle='#3c3c3c'; CTX.textAlign='right';
+    [['Cao nhất',yHigh,cx],['Giá đóng',yTop,cx-bw/2],['Giá mở',yBot,cx-bw/2],['Thấp nhất',yLow,cx]]
+      .forEach(([t,y,xt])=>{ dash(116,y,xt); CTX.fillText(t,110,y); });
+    CTX.textAlign='left'; CTX.fillStyle='#777';
+    dash(cx+bw/2,(yTop+yBot)/2,W-116); CTX.fillText('Thân nến',W-112,(yTop+yBot)/2);
+    dash(cx,(yHigh+yTop)/2,W-116);      CTX.fillText('Bấc (râu)',W-112,(yHigh+yTop)/2);
+  } else if(kind==='greenred'){
+    const bw=42, cxG=W*0.3, cxR=W*0.7;
+    candle(cxG,bw,46,86,206,250,true);
+    candle(cxR,bw,46,86,206,250,false);
+    CTX.textAlign='center'; CTX.font='12px -apple-system,Segoe UI,Arial'; CTX.fillStyle='#777';
+    CTX.fillText('đóng > mở',cxG,28); CTX.fillText('đóng < mở',cxR,28);
+    CTX.font='bold 15px -apple-system,Segoe UI,Arial';
+    CTX.fillStyle='#46a302'; CTX.fillText('XANH = TĂNG',cxG,275);
+    CTX.fillStyle='#d63b3b'; CTX.fillText('ĐỎ = GIẢM',cxR,275);
+  }
+  CTX.textAlign='left';
+}
+
 /* ---------- Định nghĩa bài học Unit 0: Kỳ vọng thật (mở đầu, đặt tâm thế) ---------- */
 function buildUnit0(){
   const L = [];
@@ -446,6 +489,23 @@ function buildUnit0(){
 /* ---------- Định nghĩa bài học Unit 1 ---------- */
 function buildUnit1(){
   const L = [];
+
+  // 0a. INTRO: cây nến là gì (giải phẫu)
+  L.push({type:'intro', illus:'anatomy',
+    prompt:'Cây nến là gì? 🕯️',
+    body:'Mỗi <b>cây nến</b> kể lại giá trong MỘT khoảng thời gian (ví dụ 15 phút):<br><br>'+
+      '• <b>Giá mở</b> — giá lúc bắt đầu<br>'+
+      '• <b>Giá đóng</b> — giá lúc kết thúc<br>'+
+      '• <b>Cao nhất / Thấp nhất</b> — đỉnh và đáy trong khoảng đó<br><br>'+
+      'Phần dày ở giữa là <b>thân nến</b>; hai sợi mảnh thò ra là <b>bấc (râu)</b>.'});
+
+  // 0b. INTRO: xanh vs đỏ
+  L.push({type:'intro', illus:'greenred',
+    prompt:'Xanh hay Đỏ? 🟢🔴',
+    body:'Màu cho biết giá tăng hay giảm trong cây nến đó:<br><br>'+
+      '• <b style="color:#46a302">XANH</b> = giá đóng <b>cao hơn</b> giá mở → giá TĂNG, phe mua thắng.<br>'+
+      '• <b style="color:#d63b3b">ĐỎ</b> = giá đóng <b>thấp hơn</b> giá mở → giá GIẢM, phe bán thắng.<br><br>'+
+      'Giờ thử tự nhận diện chúng nhé 👇'});
 
   // 1. tap nến xanh
   let c1 = ensureMixed(genCandles(8,0,4));
@@ -964,12 +1024,26 @@ function renderExercise(){
   document.getElementById('hint').textContent = ex.hint||'';
   const fb=document.getElementById('feedback'); fb.style.display='none'; fb.className='feedback';
   const cbtn=document.getElementById('checkBtn'); cbtn.className='btn gray'; cbtn.disabled=true; cbtn.textContent='Kiểm tra';
+  cbtn.onclick = checkAnswer; // reset handler (bài intro sẽ đổi sang nextExercise)
   document.getElementById('contBtn').textContent='Tiếp tục';
   const card=document.getElementById('chartCard');
   const choices=document.getElementById('choices'); choices.innerHTML='';
   document.getElementById('cv').onclick=null; // reset handler tap của bài trước
 
   if(ex.type==='replay'){ streamReplay(ex); return; }
+
+  if(ex.type==='intro'){
+    document.getElementById('prompt').textContent = ex.prompt;
+    document.getElementById('hint').textContent = ex.hint || '';
+    if(ex.illus){ card.style.display='block'; requestAnimationFrame(()=>drawIntroIllus(ex.illus)); }
+    else { card.style.display='none'; }
+    const box=document.createElement('div'); box.className='intro-text'; box.innerHTML=ex.body;
+    choices.appendChild(box);
+    cbtn.disabled=false; cbtn.className='btn green greenD'; cbtn.textContent='Tiếp tục →';
+    cbtn.onclick = nextExercise; // intro: bấm là qua bài, không chấm điểm
+    document.getElementById('checkBar').style.display='block';
+    return;
+  }
 
   document.getElementById('prompt').textContent = ex.prompt;
   document.getElementById('checkBar').style.display='block';
@@ -1102,13 +1176,15 @@ function checkAnswer(){
     document.getElementById('fbText').textContent=ex.okText;
     sndCorrect();
   } else {
-    STATE.hearts=Math.max(0,STATE.hearts-1);
+    if(CURRENT_UNIT !== 0){ // Unit 0 (kỳ vọng) không phạt tim — câu kiến thức chưa ai dạy
+      STATE.hearts=Math.max(0,STATE.hearts-1);
+      const hs=document.querySelector('.stat.heart'); hs.classList.add('shake');
+      setTimeout(()=>hs.classList.remove('shake'),420);
+    }
     fb.classList.add('bad');
     document.getElementById('fbTitle').innerHTML='❌ Chưa đúng';
     document.getElementById('fbText').textContent=ex.badText;
     sndWrong();
-    const hs=document.querySelector('.stat.heart'); hs.classList.add('shake');
-    setTimeout(()=>hs.classList.remove('shake'),420);
   }
   if(ex.type==='decision' && ex.winRate){
     document.getElementById('fbText').innerHTML += decisionReveal(ex);
