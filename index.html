@@ -250,8 +250,8 @@
 const STATE = { hearts:5, xp:0, streak:0, lastPlayed:null };
 
 const UNITS = [
-  {id:0, icon:"🧠", label:"Kỳ vọng thật",        sub:"Vì sao đa số thua", status:"done"},
-  {id:1, icon:"🕯️", label:"Đọc biểu đồ nến",     sub:"Bài học hôm nay",   status:"active"},
+  {id:0, icon:"🧠", label:"Kỳ vọng thật",        sub:"Bắt đầu ở đây",     status:"active"},
+  {id:1, icon:"🕯️", label:"Đọc biểu đồ nến",     sub:"Đọc nến cơ bản",    status:"locked"},
   {id:2, icon:"📐", label:"Cấu trúc thị trường", sub:"Trend, hỗ trợ/kháng cự", status:"locked"},
   {id:3, icon:"🛡️", label:"Quản lý rủi ro",      sub:"Size lệnh, stop, R", status:"locked"},
   {id:4, icon:"🎯", label:"Setup đầu tiên",      sub:"Vào lệnh có hệ thống", status:"locked"},
@@ -385,6 +385,62 @@ function candleAt(clientX){
     if(x>=LAYOUT[i].x0 && x<LAYOUT[i].x1) return i;
   }
   return -1;
+}
+
+/* ---------- Định nghĩa bài học Unit 0: Kỳ vọng thật (mở đầu, đặt tâm thế) ---------- */
+function buildUnit0(){
+  const L = [];
+
+  // 1. tỷ lệ thua
+  L.push({type:'choice', candles:null,
+    prompt:'Theo thống kê, bao nhiêu % người mới trade bị MẤT tiền?', hint:'',
+    options:['😬 Khoảng 70–90% — đa số đều thua','🙂 Khoảng 10%','😐 Khoảng 50–50'], answer:0,
+    okText:'Đúng, và app này không giấu bạn. 70–90% người mới thua tiền. Mục tiêu của bạn ở đây: học để KHÔNG nằm trong nhóm đó — bằng kỹ năng, không bằng may rủi.',
+    badText:'Sự thật phũ phàng: 70–90% người mới trade thua. Biết điều này từ đầu để bạn vào với sự nghiêm túc, không phải tâm thế cờ bạc.'});
+
+  // 2. không phải làm giàu nhanh
+  L.push({type:'choice', candles:null,
+    prompt:'Trade có phải là cách "làm giàu nhanh" không?', hint:'',
+    options:['🛠️ Không — đây là một kỹ năng khó, cần thời gian rèn luyện','🚀 Có, x10 tài khoản trong 1 tháng','🎰 Có, chỉ cần gặp đúng kèo'], answer:0,
+    okText:'Đúng. Trade là một NGHỀ, không phải vé số. Ai hứa làm bạn giàu nhanh là đang bán giấc mơ để lấy tiền của bạn.',
+    badText:'Không nhé. "Làm giàu nhanh" chính là cái bẫy. Trade là kỹ năng cần tháng, năm để luyện. Ai hứa x10 nhanh là dấu hiệu lừa đảo.'});
+
+  // 3. nhận diện lùa gà
+  L.push({type:'choice', candles:null,
+    prompt:'Một "thầy" khoe lãi 500%/tháng, kèo chắc thắng, xe sang nhà to. Đây là?', hint:'',
+    options:['🚩 Dấu hiệu LỪA ĐẢO — tránh xa','🏆 Người giỏi, nên theo học','💰 Cơ hội đổi đời'], answer:0,
+    okText:'Chuẩn! Lãi đều 500%/tháng là bất khả thi — thế thì họ đã thành tỷ phú giàu nhất thế giới rồi. Khoe xe sang + "kèo chắc thắng" = công thức lùa gà kinh điển. Tiền họ kiếm là từ HỌC PHÍ của bạn, không phải từ trade.',
+    badText:'Cảnh giác! Lãi 500%/tháng đều đặn là không thể. Khoe giàu + hứa chắc thắng = dấu hiệu lừa đảo rõ ràng. Tránh thật xa.'});
+
+  // 4. lợi nhuận thực tế
+  L.push({type:'choice', candles:null,
+    prompt:'Một trader CHUYÊN NGHIỆP giỏi kiếm được khoảng bao nhiêu mỗi năm?', hint:'',
+    options:['📊 Vài chục % một năm đã là rất giỏi','💸 1000% mỗi tháng','🤑 Gấp đôi tài khoản mỗi tuần'], answer:0,
+    okText:'Đúng! Quỹ đầu tư hàng đầu thế giới kiếm ~20–40%/năm đã là đỉnh cao. Đặt kỳ vọng thực tế giúp bạn không liều lĩnh để đuổi theo những con số ảo.',
+    badText:'Thực tế khiêm tốn hơn nhiều: vài chục %/năm đã là cực giỏi (quỹ top thế giới cũng vậy). Kỳ vọng 1000% là ảo tưởng dẫn tới liều lĩnh và cháy tài khoản.'});
+
+  // 5. app này hứa gì
+  L.push({type:'choice', candles:null,
+    prompt:'Vậy app này hứa gì với bạn?', hint:'',
+    options:['🧠 Dạy tư duy + kỹ năng để bạn không cháy; KHÔNG hứa làm bạn giàu','💎 Cam kết x10 tài khoản','📈 Cho kèo thắng mỗi ngày'], answer:0,
+    okText:'Đúng vậy. App này dạy bạn câu cá, không phát cá, và tuyệt đối không hứa số. Nếu một ngày app này hứa làm bạn giàu — hãy nghi ngờ chính nó.',
+    badText:'Không. App này KHÔNG hứa làm bạn giàu hay cho kèo. Nó dạy tư duy + kỹ năng để bạn tự quyết định và không cháy. Đó mới là sự thật.'});
+
+  // 6. tiền nào đem đi trade
+  L.push({type:'choice', candles:null,
+    prompt:'Khi bắt đầu thật, đồng tiền đầu tiên bạn nên mang đi trade là?', hint:'',
+    options:['🪙 Số tiền bạn SẴN SÀNG mất, sau khi đã học + tập demo','🏦 Tiền tiết kiệm cả đời','💳 Tiền vay mượn để x cho nhanh'], answer:0,
+    okText:'Đúng! Không bao giờ trade bằng tiền ăn, tiền vay, tiền sống còn. Chỉ dùng số tiền mất hoàn toàn bạn vẫn ngủ ngon. Và tập DEMO cho vững trước khi đụng tiền thật.',
+    badText:'Nguy hiểm! Tuyệt đối không trade bằng tiền tiết kiệm hay tiền vay. Chỉ dùng số tiền bạn sẵn sàng mất, sau khi đã tập demo.'});
+
+  // 7. tâm thế đóng unit
+  L.push({type:'choice', candles:null,
+    prompt:'Vậy nên xem việc học trade giống như gì?', hint:'',
+    options:['📚 Học một cái nghề — cần kiên nhẫn luyện tập hàng tháng, hàng năm','🎟️ Mua vé số — trông chờ may mắn','⚡ Một ván cờ bạc cho nhanh'], answer:0,
+    okText:'Chính xác — và bạn đã có tâm thế đúng để bắt đầu! Giờ mình học kỹ năng đầu tiên: đọc biểu đồ. Chào mừng đến với TradeZero. 🚀',
+    badText:'Hãy xem nó như học một NGHỀ: cần kiên nhẫn và luyện tập. Vào với tâm thế vé số / cờ bạc là thua ngay từ đầu. Giờ mình bắt đầu nhé.'});
+
+  return L;
 }
 
 /* ---------- Định nghĩa bài học Unit 1 ---------- */
@@ -822,8 +878,9 @@ function buildUnit6(){
 
 /* ---------- Sổ đăng ký unit + nội dung kết quả ---------- */
 let CURRENT_UNIT = 1;
-const BUILDERS = { 1:buildUnit1, 2:buildUnit2, 3:buildUnit3, 4:buildUnit4, 5:buildUnit5, 6:buildUnit6 };
+const BUILDERS = { 0:buildUnit0, 1:buildUnit1, 2:buildUnit2, 3:buildUnit3, 4:buildUnit4, 5:buildUnit5, 6:buildUnit6 };
 const SUBTITLE = {
+  0:'Bạn đã có tâm thế đúng để bắt đầu.',
   1:'Bạn vừa đọc được biểu đồ nến đầu tiên.',
   2:'Bạn vừa đọc được cấu trúc thị trường.',
   3:'Bạn vừa nắm được xương sống của sự sống còn.',
@@ -832,6 +889,9 @@ const SUBTITLE = {
   6:'🎓 Bạn đã hoàn thành cả 6 unit nền tảng. Giờ là lúc thực hành thật (demo).',
 };
 const TAKEAWAY = {
+  0:'<b>💡 Bài học rút ra:</b> Đa số người mới thua, và không hề có chuyện "làm giàu nhanh". '+
+    'Vào với kỳ vọng thật + tâm thế học nghề, bạn đã đi trước phần lớn người chơi. '+
+    'Bước tới <b>Unit 1</b>: học đọc biểu đồ nến.',
   1:'<b>💡 Bài học rút ra:</b> Đọc được nến mới chỉ là bước 1. '+
     'Điều quan trọng nhất sắp tới (Unit 3): <b>quản lý rủi ro</b>. '+
     'Vì một quyết định ĐÚNG vẫn có thể thua — và đó là chuyện bình thường trong trade.',
