@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>TradeZero — Học trade từ con số 0</title>
+<style>
+  :root{
+    --green:#58cc02; --green-d:#46a302; --green-l:#d7ffb8;
+    --red:#ff4b4b; --red-d:#d63b3b;
+    --blue:#1cb0f6; --ink:#3c3c3c; --muted:#777;
+    --bg:#fff; --panel:#f7f7f7; --line:#e5e5e5;
+    --gold:#ffc800;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); background:var(--bg);
+    display:flex; flex-direction:column; align-items:center;
+    overflow-x:hidden;
+  }
+  .app{width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column;}
+
+  /* ---- Top bar ---- */
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:14px 16px; border-bottom:2px solid var(--line);
+    position:sticky; top:0; background:#fff; z-index:5;
+  }
+  .stat{display:flex; align-items:center; gap:5px; font-weight:800; font-size:18px;}
+  .stat.fire{color:#ff9600;} .stat.heart{color:var(--red);} .stat.xp{color:var(--gold);}
+  .stat .ic{font-size:20px;}
+  .spacer{flex:1;}
+
+  /* ---- Screens ---- */
+  .screen{flex:1; display:none; flex-direction:column;}
+  .screen.active{display:flex;}
+
+  /* ---- Home / path ---- */
+  .home{padding:20px 16px 40px;}
+  .hero{
+    background:linear-gradient(135deg,#1cb0f6,#1380d8);
+    color:#fff; border-radius:18px; padding:20px; margin-bottom:8px;
+  }
+  .hero h1{margin:0 0 4px; font-size:22px;}
+  .hero p{margin:0; opacity:.92; font-size:14px; line-height:1.4;}
+  .path{display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:18px;}
+  .node{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    position:relative;
+  }
+  .node .circle{
+    width:74px; height:74px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:32px; border:none; cursor:pointer;
+    box-shadow:0 5px 0 rgba(0,0,0,.18);
+    transition:transform .08s;
+  }
+  .node .circle:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.18);}
+  .node.locked .circle{background:#e0e0e0; color:#9a9a9a; box-shadow:0 5px 0 #c8c8c8; cursor:not-allowed;}
+  .node.done .circle{background:var(--gold); color:#fff; box-shadow:0 5px 0 #d9a800;}
+  .node.active .circle{background:var(--green); color:#fff; box-shadow:0 5px 0 var(--green-d);}
+  .node .label{font-size:13px; font-weight:700; text-align:center; max-width:160px;}
+  .node .sub{font-size:11px; color:var(--muted); margin-top:-4px;}
+  .node.active .label{color:var(--green-d);}
+  .connector{width:4px; height:22px; background:var(--line); border-radius:2px;}
+  .start-badge{
+    position:absolute; top:-14px; right:-6px;
+    background:#fff; color:var(--green-d); border:2px solid var(--green);
+    font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px;
+    animation:bob 1s ease-in-out infinite;
+  }
+  @keyframes bob{0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)}}
+
+  /* ---- Lesson ---- */
+  .lesson{padding:0; position:relative;}
+  .progress-wrap{display:flex; align-items:center; gap:12px; padding:14px 16px;}
+  .progress-wrap .close{font-size:24px; color:#afafaf; cursor:pointer; font-weight:700; line-height:1;}
+  .bar{flex:1; height:14px; background:var(--line); border-radius:8px; overflow:hidden;}
+  .bar > i{display:block; height:100%; width:0%; background:var(--green); border-radius:8px; transition:width .3s;}
+  .lesson-body{flex:1; padding:6px 16px 16px; display:flex; flex-direction:column;}
+  .prompt{font-size:21px; font-weight:800; margin:8px 0 4px; line-height:1.3; display:flex; align-items:center;}
+  .hint{font-size:13px; color:var(--muted); margin-bottom:12px;}
+  .chart-card{
+    border:2px solid var(--line); border-radius:16px; overflow:hidden;
+    background:#fcfcfc; touch-action:manipulation;
+  }
+  canvas{display:block; width:100%; height:300px;}
+  .choices{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
+  .choice{
+    border:2px solid var(--line); border-bottom-width:4px; border-radius:14px;
+    padding:14px 16px; font-size:16px; font-weight:700; background:#fff;
+    cursor:pointer; text-align:left; transition:background .1s;
+  }
+  .choice:active{background:var(--panel);}
+  .choice.sel{border-color:var(--blue); background:#ddf4ff; color:#1380d8;}
+  .choice.ok{border-color:var(--green); background:var(--green-l); color:var(--green-d);}
+  .choice.bad{border-color:var(--red); background:#ffdfe0; color:var(--red-d);}
+  .replay-controls{display:flex; justify-content:center; margin-bottom:4px;}
+  .replay-btn{background:#eaf7ff; color:#1380d8; border:2px solid var(--blue); border-radius:12px;
+    padding:8px 16px; font-weight:800; cursor:pointer; font-size:14px;}
+  .live-dot{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--red);
+    margin-right:8px; animation:blink 1s infinite;}
+  @keyframes blink{50%{opacity:.2}}
+  /* slider exercise */
+  .slider-box{margin-top:8px; border:2px solid var(--line); border-radius:16px; padding:20px 18px; background:#fcfcfc;}
+  .slider-read{font-size:16px; text-align:center; margin-bottom:18px; line-height:1.7; min-height:52px;}
+  .slider-read b{font-size:19px;}
+  input[type=range].slider{width:100%; -webkit-appearance:none; appearance:none; height:12px; border-radius:7px;
+    background:linear-gradient(90deg,#d7ffb8,#e5e5e5); outline:none; cursor:pointer;}
+  input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none; appearance:none; width:32px; height:32px;
+    border-radius:50%; background:var(--blue); border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.3); cursor:pointer;}
+  input[type=range].slider::-moz-range-thumb{width:32px; height:32px; border:3px solid #fff; border-radius:50%;
+    background:var(--blue); box-shadow:0 2px 6px rgba(0,0,0,.3); cursor:pointer;}
+  .slider-ends{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:10px; font-weight:700;}
+  /* decision exercise */
+  .context-card{border:2px solid var(--blue); background:#eaf7ff; border-radius:14px; padding:13px 15px;
+    margin-bottom:12px; font-size:14px; line-height:1.8; font-weight:600; color:#1380d8;}
+  .context-card b{color:#0d5a96;}
+  .dist{margin-top:12px; padding-top:12px; border-top:1px dashed #aaa;}
+  .dist-label{font-size:12.5px; color:#555; margin-bottom:6px; font-weight:700;}
+  .dist-bar{display:flex; height:28px; border-radius:8px; overflow:hidden; font-size:12px; font-weight:800; color:#fff;}
+  .dist-bar .win{background:var(--green); display:flex; align-items:center; justify-content:center; min-width:30px;}
+  .dist-bar .loss{background:var(--red); display:flex; align-items:center; justify-content:center; min-width:30px;}
+  .dist-outcome{margin-top:10px; font-size:13px; font-weight:700; padding:9px 11px; border-radius:10px; line-height:1.5;}
+  .dist-outcome.win{background:var(--green-l); color:var(--green-d);}
+  .dist-outcome.loss{background:#ffdfe0; color:var(--red-d);}
+
+  /* ---- Feedback bar ---- */
+  .feedback{
+    position:sticky; bottom:0; padding:16px;
+    border-top:2px solid var(--line); background:#fff;
+  }
+  .feedback.good{background:var(--green-l); border-color:#bfe89a;}
+  .feedback.bad{background:#ffdfe0; border-color:#f5b5b6;}
+  .feedback.show{animation:slideup .25s ease-out;}
+  @keyframes slideup{from{transform:translateY(100%); opacity:.3} to{transform:translateY(0); opacity:1}}
+  .fb-title{font-weight:800; font-size:17px; display:flex; align-items:center; gap:8px;}
+  .feedback.good .fb-title{color:var(--green-d);}
+  .feedback.bad .fb-title{color:var(--red-d);}
+  .fb-text{font-size:13.5px; color:#555; margin:6px 0 0; line-height:1.45;}
+  .btn{
+    display:block; width:100%; border:none; border-radius:14px;
+    padding:15px; font-size:16px; font-weight:800; color:#fff;
+    cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.18); transition:transform .06s;
+  }
+  .btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(0,0,0,.18);}
+  .btn:disabled{opacity:.4; cursor:default; box-shadow:none;}
+  .btn.green{background:var(--green);} .btn.greenD{box-shadow:0 4px 0 var(--green-d);}
+  .btn.gray{background:#e5e5e5; color:#afafaf; box-shadow:0 4px 0 #cfcfcf;}
+  .btn.blue{background:var(--blue); box-shadow:0 4px 0 #1380d8;}
+  .check-row{margin-top:10px;}
+
+  /* ---- Animations ---- */
+  @keyframes shake{0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}}
+  .shake{animation:shake .42s;}
+  .confetti{position:fixed; top:-12px; width:10px; height:14px; z-index:60; border-radius:2px; pointer-events:none;}
+  @keyframes fall{to{transform:translateY(112vh) rotate(560deg); opacity:.85}}
+
+  /* ---- Result ---- */
+  .result{padding:30px 20px; align-items:center; justify-content:center; text-align:center; flex:1; display:none; flex-direction:column;}
+  .result.active{display:flex;}
+  .result .emoji{font-size:64px; margin-bottom:8px;}
+  .result h2{margin:0 0 6px; font-size:26px;}
+  .result p{color:var(--muted); margin:0 0 22px;}
+  .stats{display:flex; gap:12px; width:100%; margin-bottom:26px; max-width:340px;}
+  .stat-box{flex:1; border:2px solid var(--line); border-radius:14px; padding:14px 8px;}
+  .stat-box.gold{border-color:var(--gold); background:#fff9e6;}
+  .stat-box.blue{border-color:var(--blue); background:#eaf7ff;}
+  .stat-box .num{font-size:24px; font-weight:900;}
+  .stat-box.gold .num{color:#e0a800;} .stat-box.blue .num{color:#1380d8;}
+  .stat-box .cap{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.5px;}
+  .takeaway{
+    background:#fff8e6; border:2px solid #ffe9a8; border-radius:14px;
+    padding:14px; font-size:13.5px; text-align:left; color:#7a5b00; margin-bottom:24px; line-height:1.5; max-width:340px;
+  }
+  .takeaway b{color:#5c4400;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="stat fire"><span class="ic">🔥</span><span id="t-streak">0</span></div>
+    <div class="stat xp"><span class="ic">⚡</span><span id="t-xp">0</span></div>
+    <div class="spacer"></div>
+    <div class="stat heart"><span class="ic">❤️</span><span id="t-hearts">5</span></div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen active" id="home">
+    <div class="home">
+      <div class="hero">
+        <h1>TradeZero 📈</h1>
+        <p>Học trade từ con số 0 — chạm, kéo, quyết định. Không lý thuyết dài dòng. Mỗi ngày 5 phút.</p>
+      </div>
+      <div class="path" id="path"></div>
+    </div>
+  </div>
+
+  <!-- LESSON -->
+  <div class="screen" id="lesson">
+    <div class="lesson">
+      <div class="progress-wrap">
+        <span class="close" onclick="quitLesson()">✕</span>
+        <div class="bar"><i id="prog"></i></div>
+      </div>
+      <div class="lesson-body">
+        <div class="prompt" id="prompt"></div>
+        <div class="hint" id="hint"></div>
+        <div class="chart-card" id="chartCard" style="display:none">
+          <canvas id="cv"></canvas>
+        </div>
+        <div class="choices" id="choices"></div>
+      </div>
+    </div>
+    <div class="feedback" id="feedback" style="display:none">
+      <div class="fb-title" id="fbTitle"></div>
+      <div class="fb-text" id="fbText"></div>
+      <div class="check-row"><button class="btn green greenD" id="contBtn" onclick="nextExercise()">Tiếp tục</button></div>
+    </div>
+    <div class="feedback" id="checkBar">
+      <button class="btn gray" id="checkBtn" disabled onclick="checkAnswer()">Kiểm tra</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="result">
+    <div class="emoji" id="r-emoji">🎉</div>
+    <h2 id="r-title">Hoàn thành bài học!</h2>
+    <p id="r-sub">Anh vừa đọc được biểu đồ nến đầu tiên.</p>
+    <div class="stats">
+      <div class="stat-box gold"><div class="num" id="r-xp">0</div><div class="cap">⚡ XP</div></div>
+      <div class="stat-box blue"><div class="num" id="r-acc">0%</div><div class="cap">🎯 Chính xác</div></div>
+    </div>
+    <div class="takeaway" id="r-take"></div>
+    <button class="btn green greenD" onclick="goHome()" style="max-width:320px">Về trang chủ</button>
+  </div>
+
+</div>
+
+<script>
+/* ========================================================================
+   TradeZero — prototype web. Tự chứa, không thư viện ngoài.
+   Data nến = random-walk sinh tại chỗ (sau ghép data Bybit thật).
+   ===================================================================== */
+
+const STATE = { hearts:5, xp:0, streak:0, lastPlayed:null };
+
+const UNITS = [
+  {id:0, icon:"🧠", label:"Kỳ vọng thật",        sub:"Vì sao đa số thua", status:"done"},
+  {id:1, icon:"🕯️", label:"Đọc biểu đồ nến",     sub:"Bài học hôm nay",   status:"active"},
+  {id:2, icon:"📐", label:"Cấu trúc thị trường", sub:"Trend, hỗ trợ/kháng cự", status:"locked"},
+  {id:3, icon:"🛡️", label:"Quản lý rủi ro",      sub:"Size lệnh, stop, R", status:"locked"},
+  {id:4, icon:"🎯", label:"Setup đầu tiên",      sub:"Vào lệnh có hệ thống", status:"locked"},
+  {id:5, icon:"😤", label:"Tâm lý thực chiến",   sub:"FOMO, gỡ gạc",      status:"locked"},
+  {id:6, icon:"📓", label:"Nhật ký & tự sửa",    sub:"Tiến bộ mỗi ngày",  status:"locked"},
+];
+
+/* ---------- Lưu / nạp tiến độ (localStorage) ----------
+   localStorage chỉ chứa text → mình JSON hoá y như json.dumps/loads bên Python. */
+function saveState(){
+  try{
+    localStorage.setItem('tradezero', JSON.stringify({
+      xp:STATE.xp, streak:STATE.streak, lastPlayed:STATE.lastPlayed,
+      units:UNITS.map(u=>u.status)
+    }));
+  }catch(e){}
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem('tradezero');
+    if(!raw) return;
+    const s = JSON.parse(raw);
+    if(typeof s.xp==='number') STATE.xp = s.xp;
+    if(typeof s.streak==='number') STATE.streak = s.streak;
+    STATE.lastPlayed = s.lastPlayed || null;
+    if(Array.isArray(s.units)) s.units.forEach((st,i)=>{ if(UNITS[i]) UNITS[i].status = st; });
+  }catch(e){}
+}
+function today(){ return new Date().toISOString().slice(0,10); } // 'YYYY-MM-DD'
+
+/* ---------- Âm thanh (WebAudio, không file ngoài) ---------- */
+let AC=null;
+function audio(){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended') AC.resume(); }catch(e){} return AC; }
+function tone(freq,start,dur,type='sine',vol=0.2){
+  const a=audio(); if(!a) return;
+  const o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.value=freq;
+  const t=a.currentTime+start;
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(vol,t+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+dur+0.03);
+}
+function sndCorrect(){ tone(660,0,0.12,'triangle',0.25); tone(990,0.1,0.2,'triangle',0.25); }
+function sndWrong(){ tone(196,0,0.2,'sawtooth',0.16); tone(146,0.13,0.24,'sawtooth',0.15); }
+function sndTap(){ tone(540,0,0.05,'square',0.09); }
+function sndTick(){ tone(440,0,0.04,'sine',0.05); }
+function sndFinish(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*0.13,0.28,'triangle',0.24)); }
+function confetti(){
+  const colors=['#58cc02','#1cb0f6','#ffc800','#ff4b4b','#ce82ff'];
+  for(let i=0;i<72;i++){
+    const d=document.createElement('div'); d.className='confetti';
+    d.style.left=Math.random()*100+'vw';
+    d.style.background=colors[i%colors.length];
+    d.style.animation=`fall ${1+Math.random()*1.2}s ${Math.random()*0.4}s ease-in forwards`;
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),2700);
+  }
+}
+
+/* ---------- Sinh data nến ---------- */
+function genCandles(n, trend, vol){
+  let price = 100 + Math.random()*20;
+  const out = [];
+  for(let i=0;i<n;i++){
+    const open = price;
+    const drift = trend * vol * 0.5;
+    const noise = (Math.random()-0.5) * vol * 2;
+    let close = open + drift + noise;
+    if(close<1) close = 1;
+    const hi = Math.max(open,close) + Math.random()*vol*0.9;
+    const lo = Math.min(open,close) - Math.random()*vol*0.9;
+    out.push({o:open,h:hi,l:lo,c:close});
+    price = close;
+  }
+  return out;
+}
+function ensureMixed(c){
+  const up = c.findIndex(k=>k.c>k.o), dn = c.findIndex(k=>k.c<k.o);
+  if(up<0){ c[0].c = c[0].o + Math.abs(c[0].h-c[0].o) + 1; }
+  if(dn<0){ c[1].c = c[1].o - Math.abs(c[1].o-c[1].l) - 1; }
+  return c;
+}
+
+/* ---------- Vẽ nến lên canvas ---------- */
+let CV, CTX, LAYOUT=[];
+function drawChart(candles, highlightSet){
+  CV = document.getElementById('cv');
+  const card = document.getElementById('chartCard');
+  const cssW = card.clientWidth, cssH = 300;
+  const dpr = window.devicePixelRatio || 1;
+  CV.width = cssW*dpr; CV.height = cssH*dpr;
+  CV.style.height = cssH+'px';
+  CTX = CV.getContext('2d'); CTX.setTransform(1,0,0,1,0,0); CTX.scale(dpr,dpr);
+  CTX.clearRect(0,0,cssW,cssH);
+
+  const padX=16, padTop=18, padBot=18;
+  const w = cssW-padX*2, h = cssH-padTop-padBot;
+  let hi=-1e9, lo=1e9;
+  candles.forEach(k=>{hi=Math.max(hi,k.h); lo=Math.min(lo,k.l);});
+  const range = (hi-lo)||1;
+  const Y = v => padTop + (hi - v)/range * h;
+
+  const n = candles.length;
+  const slot = w/n;
+  const bodyW = Math.min(slot*0.62, 22);
+  LAYOUT = [];
+
+  candles.forEach((k,i)=>{
+    const cx = padX + slot*i + slot/2;
+    LAYOUT.push({x0:padX+slot*i, x1:padX+slot*(i+1), cx});
+    const green = k.c>=k.o;
+    const col = green? '#58cc02' : '#ff4b4b';
+    if(highlightSet && highlightSet.has(i)){
+      CTX.fillStyle = 'rgba(28,176,246,.16)';
+      CTX.fillRect(padX+slot*i, padTop-6, slot, h+12);
+    }
+    CTX.strokeStyle = col; CTX.lineWidth = 2;
+    CTX.beginPath(); CTX.moveTo(cx, Y(k.h)); CTX.lineTo(cx, Y(k.l)); CTX.stroke();
+    const yo=Y(k.o), yc=Y(k.c);
+    const top=Math.min(yo,yc), bh=Math.max(Math.abs(yc-yo),2);
+    CTX.fillStyle = col;
+    CTX.fillRect(cx-bodyW/2, top, bodyW, bh);
+  });
+}
+function candleAt(clientX){
+  const r = CV.getBoundingClientRect();
+  const x = clientX - r.left;
+  for(let i=0;i<LAYOUT.length;i++){
+    if(x>=LAYOUT[i].x0 && x<LAYOUT[i].x1) return i;
+  }
+  return -1;
+}
+
+/* ---------- Định nghĩa bài học Unit 1 ---------- */
+function buildUnit1(){
+  const L = [];
+
+  // 1. tap nến xanh
+  let c1 = ensureMixed(genCandles(8,0,4));
+  L.push({type:'tap', candles:c1, prompt:'Chạm vào một nến TĂNG (xanh)',
+    hint:'Nến xanh: giá đóng cao hơn giá mở → phe mua thắng.',
+    correct:c1.map((k,i)=>k.c>=k.o?i:-1).filter(i=>i>=0),
+    okText:'Đúng rồi! Nến xanh = đóng cao hơn mở. Người mua đẩy giá lên.',
+    badText:'Nến đó là nến giảm (đỏ). Nến TĂNG có thân xanh — đóng cao hơn mở.'});
+
+  // 2. tap nến đỏ
+  let c2 = ensureMixed(genCandles(8,0,4));
+  L.push({type:'tap', candles:c2, prompt:'Chạm vào một nến GIẢM (đỏ)',
+    hint:'Nến đỏ: giá đóng thấp hơn giá mở → phe bán thắng.',
+    correct:c2.map((k,i)=>k.c<k.o?i:-1).filter(i=>i>=0),
+    okText:'Chuẩn! Nến đỏ = đóng thấp hơn mở. Người bán đẩy giá xuống.',
+    badText:'Nến đó là nến tăng (xanh). Nến GIẢM có thân đỏ — đóng thấp hơn mở.'});
+
+  // 3. đỉnh cao nhất
+  let c3 = ensureMixed(genCandles(9,1,4));
+  let hiIdx = c3.reduce((b,k,i,a)=>k.h>a[b].h?i:b,0);
+  L.push({type:'tap', candles:c3, prompt:'Chạm vào nến chạm ĐỈNH cao nhất',
+    hint:'Đỉnh = điểm cao nhất của cái bấc (râu) phía trên.', correct:[hiIdx],
+    okText:'Tốt! Mức cao nhất cả khung — vùng này thường là kháng cự.',
+    badText:'Chưa đúng. Nhìn cái bấc vươn cao nhất phía trên, không phải thân dài nhất.'});
+
+  // 4. đáy thấp nhất
+  let c4 = ensureMixed(genCandles(9,-1,4));
+  let loIdx = c4.reduce((b,k,i,a)=>k.l<a[b].l?i:b,0);
+  L.push({type:'tap', candles:c4, prompt:'Chạm vào nến chạm ĐÁY thấp nhất',
+    hint:'Đáy = điểm thấp nhất của cái bấc phía dưới.', correct:[loIdx],
+    okText:'Chính xác! Mức thấp nhất khung — vùng này thường là hỗ trợ.',
+    badText:'Chưa đúng. Tìm cái bấc thòng xuống thấp nhất phía dưới.'});
+
+  // 5. thân dài nhất
+  let c5 = ensureMixed(genCandles(8,0,5));
+  let bigIdx = c5.reduce((b,k,i,a)=>Math.abs(k.c-k.o)>Math.abs(a[b].c-a[b].o)?i:b,0);
+  L.push({type:'tap', candles:c5, prompt:'Chạm vào nến có THÂN dài nhất (biến động mạnh nhất)',
+    hint:'Thân = khoảng giữa giá mở và đóng. Thân dài → một phe áp đảo.', correct:[bigIdx],
+    okText:'Giỏi! Thân dài = một phe thắng áp đảo trong phiên. Tín hiệu động lượng mạnh.',
+    badText:'Chưa đúng. Tìm nến có khối thân đặc cao nhất, bỏ qua phần bấc.'});
+
+  // 6. trắc nghiệm xu hướng
+  let c6 = genCandles(12,1.6,3);
+  L.push({type:'choice', candles:c6, prompt:'Xu hướng chung của khung này là gì?',
+    hint:'Nhìn tổng thể: giá đi từ trái sang phải theo hướng nào?',
+    options:['📈 Tăng','📉 Giảm','➡️ Đi ngang'], answer:0,
+    okText:'Đúng! Đỉnh và đáy đều cao dần → xu hướng TĂNG. Thuận xu hướng dễ thắng hơn.',
+    badText:'Nhìn lại: giá nhích cao dần từ trái sang phải — đây là xu hướng TĂNG.'});
+
+  // 7. doji / giằng co (thân nhỏ nhất)
+  let c7 = ensureMixed(genCandles(8,0,4));
+  let dk=3; c7[dk].o = c7[dk].c; c7[dk].c = c7[dk].o + 0.03;
+  c7[dk].h = c7[dk].o + 4; c7[dk].l = c7[dk].o - 4;
+  let dojiIdx = c7.reduce((b,k,i,a)=>Math.abs(k.c-k.o)<Math.abs(a[b].c-a[b].o)?i:b,0);
+  L.push({type:'tap', candles:c7, prompt:'Chạm vào nến GIẰNG CO (thân gần như không có)',
+    hint:'Thân teo = phe mua và bán cân bằng → thị trường do dự (nến Doji).', correct:[dojiIdx],
+    okText:'Đúng! Thân teo = giằng co, do dự. Thường báo hiệu giá sắp đổi hướng.',
+    badText:'Chưa đúng. Tìm nến gần như chỉ có bấc, thân teo lại — đó là sự do dự.'});
+
+  // 8. bấc dưới dài nhất
+  let c8 = ensureMixed(genCandles(8,0,4));
+  let wk=4; c8[wk].l = Math.min(c8[wk].o,c8[wk].c) - 9;
+  let wickIdx = c8.reduce((b,k,i,a)=>(Math.min(k.o,k.c)-k.l)>(Math.min(a[b].o,a[b].c)-a[b].l)?i:b,0);
+  L.push({type:'tap', candles:c8, prompt:'Chạm vào nến có BẤC DƯỚI dài nhất (phe mua đỡ giá)',
+    hint:'Bấc dưới dài = giá bị dìm xuống nhưng người mua kéo lại → từ chối giá thấp.', correct:[wickIdx],
+    okText:'Tuyệt! Bấc dưới dài = phe mua mạnh tay đỡ giá. Tín hiệu đảo chiều tăng tiềm năng.',
+    badText:'Chưa đúng. Tìm nến có cái đuôi dài thòng xuống phía dưới.'});
+
+  // 9. replay nến chạy
+  let c9 = genCandles(11,1.5,3.2);
+  L.push({type:'replay', candles:c9,
+    prompt:'Theo dõi 11 nến chạy lần lượt...',
+    question:'Phe nào đang KIỂM SOÁT thị trường?',
+    hint:'',
+    options:['🟢 Phe mua','🔴 Phe bán','⚖️ Giằng co'], answer:0,
+    okText:'Đúng! Nến xanh nối tiếp, đỉnh đáy cao dần → phe mua kiểm soát. Đọc dòng tiền theo thời gian là kỹ năng cốt lõi.',
+    badText:'Nhìn lại nhịp chạy: giá leo dần, nhiều nến xanh → phe MUA đang kiểm soát.'});
+
+  // 10. trắc nghiệm ý nghĩa
+  L.push({type:'choice', candles:null, prompt:'Một nến XANH thân dài cho thấy điều gì?', hint:'',
+    options:['Phe mua thắng áp đảo phiên đó','Thị trường do dự, giằng co','Sắp có tin tức ra'], answer:0,
+    okText:'Đúng! Thân xanh dài = người mua kiểm soát mạnh. Nhưng nhớ: 1 nến đẹp KHÔNG đảm bảo thắng.',
+    badText:'Thân xanh dài nghĩa là phe MUA thắng áp đảo trong phiên — giá bị đẩy lên mạnh.'});
+
+  return L;
+}
+
+/* ---------- Sinh nến từ chuỗi điểm xoay (pivot) ----------
+   Cho trước các mốc giá (vd 100→114→106...), đổ nến vào giữa từng đoạn.
+   Nhờ biết trước mốc nên xác định ĐỈNH/ĐÁY (swing high/low) chính xác 100%. */
+function fromPivots(pivots, perLeg){
+  const candles=[], swingHigh=[], swingLow=[];
+  for(let p=0;p<pivots.length-1;p++){
+    const from=pivots[p], to=pivots[p+1];
+    const up = to>from, span=Math.abs(to-from)||1;
+    for(let s=1;s<=perLeg;s++){
+      const o=from+(to-from)*((s-1)/perLeg);
+      const c=from+(to-from)*(s/perLeg) + (Math.random()-0.5)*span*0.10;
+      const hi=Math.max(o,c)+Math.random()*span*0.10;
+      const lo=Math.min(o,c)-Math.random()*span*0.10;
+      candles.push({o,h:hi,l:lo,c});
+    }
+    (up?swingHigh:swingLow).push(candles.length-1); // nến cuối mỗi đoạn = đỉnh/đáy
+  }
+  return {candles, swingHigh, swingLow};
+}
+
+/* ---------- Định nghĩa bài học Unit 2: Cấu trúc thị trường ---------- */
+function buildUnit2(){
+  const L = [];
+
+  // 1. nhận diện xu hướng TĂNG (đỉnh đáy cao dần)
+  let up = fromPivots([100,114,107,124,117,134], 3);
+  L.push({type:'choice', candles:up.candles, prompt:'Cấu trúc thị trường này là gì?',
+    hint:'Nhìn các đỉnh và các đáy: chúng cao dần hay thấp dần?',
+    options:['📈 Tăng (đỉnh & đáy cao dần)','📉 Giảm (đỉnh & đáy thấp dần)','➡️ Đi ngang'], answer:0,
+    okText:'Đúng! Đỉnh sau cao hơn đỉnh trước, đáy sau cao hơn đáy trước → xu hướng TĂNG. Đây là "Higher High – Higher Low".',
+    badText:'Nhìn lại: mỗi đỉnh và mỗi đáy đều nhích cao hơn lần trước → đó là xu hướng TĂNG.'});
+
+  // 2. tap Higher High (đỉnh sau cao hơn đỉnh trước)
+  let up2 = fromPivots([100,113,106,123,116,133], 3);
+  L.push({type:'tap', candles:up2.candles, prompt:'Chạm vào một ĐỈNH cao hơn đỉnh liền trước (Higher High)',
+    hint:'Higher High = một đỉnh mới vượt qua đỉnh cũ — dấu hiệu phe mua vẫn mạnh.',
+    correct:up2.swingHigh.slice(1), // mọi đỉnh sau đỉnh đầu đều là HH
+    okText:'Chuẩn! Đỉnh này vượt đỉnh trước → Higher High. Chuỗi HH là xương sống của xu hướng tăng.',
+    badText:'Chưa đúng. Tìm một ĐỈNH (chỗ giá quay đầu đi xuống) mà cao hơn cái đỉnh ngay trước nó.'});
+
+  // 3. tap vùng HỖ TRỢ (đáy giữ giá, giá nảy lên)
+  let up3 = fromPivots([102,116,108,126,118,136], 3);
+  L.push({type:'tap', candles:up3.candles, prompt:'Chạm vào vùng HỖ TRỢ (đáy giá nảy lên)',
+    hint:'Hỗ trợ = nơi giá bị đẩy xuống nhưng được "đỡ" và bật lên lại.',
+    correct:up3.swingLow,
+    okText:'Tốt! Đó là vùng hỗ trợ — phe mua nhảy vào đỡ giá. Trader hay canh mua gần vùng này.',
+    badText:'Chưa đúng. Hỗ trợ nằm ở các ĐÁY — chỗ giá chạm xuống rồi nảy ngược lên.'});
+
+  // 4. nhận diện xu hướng GIẢM
+  let dn = fromPivots([134,118,126,108,116,98], 3);
+  L.push({type:'choice', candles:dn.candles, prompt:'Cấu trúc thị trường này là gì?',
+    hint:'',
+    options:['📈 Tăng','📉 Giảm (đỉnh & đáy thấp dần)','➡️ Đi ngang'], answer:1,
+    okText:'Đúng! Đỉnh sau thấp hơn đỉnh trước, đáy sau thấp hơn đáy trước → xu hướng GIẢM (Lower High – Lower Low).',
+    badText:'Nhìn lại: mỗi đỉnh và đáy đều tụt thấp hơn lần trước → xu hướng GIẢM.'});
+
+  // 5. tap vùng KHÁNG CỰ (đỉnh chặn giá)
+  let dn2 = fromPivots([132,116,124,106,114,96], 3);
+  L.push({type:'tap', candles:dn2.candles, prompt:'Chạm vào vùng KHÁNG CỰ (đỉnh chặn giá đi lên)',
+    hint:'Kháng cự = nơi giá cố đi lên nhưng bị "chặn" rồi quay đầu giảm.',
+    correct:dn2.swingHigh,
+    okText:'Đúng! Đó là kháng cự — phe bán nhảy vào đè giá. Trong xu hướng giảm, đây là vùng canh bán.',
+    badText:'Chưa đúng. Kháng cự nằm ở các ĐỈNH — chỗ giá chạm lên rồi bị đẩy xuống.'});
+
+  // 6. nhận diện ĐI NGANG (sideways)
+  let side = fromPivots([110,120,109,119,111,120,110], 2);
+  L.push({type:'choice', candles:side.candles, prompt:'Cấu trúc thị trường này là gì?',
+    hint:'Các đỉnh ngang nhau, các đáy ngang nhau → ?',
+    options:['📈 Tăng','📉 Giảm','➡️ Đi ngang (giằng co trong biên độ)'], answer:2,
+    okText:'Đúng! Đỉnh và đáy đi ngang nhau → thị trường ĐI NGANG. Vùng này dễ bị "cưa" nếu trade thuận xu hướng.',
+    badText:'Nhìn lại: giá quanh quẩn một biên độ, không cao dần cũng không thấp dần → ĐI NGANG.'});
+
+  // 7. replay: phá vỡ cấu trúc (Break of Structure)
+  let bos = fromPivots([100,116,107,126,103], 3); // tăng... rồi đáy 103 thủng dưới đáy 107
+  L.push({type:'replay', candles:bos.candles,
+    prompt:'Theo dõi cấu trúc tăng hình thành rồi diễn biến cuối...',
+    question:'Xu hướng tăng còn nguyên hay đã bị PHÁ VỠ?',
+    hint:'',
+    options:['💥 Đã bị phá vỡ (tạo đáy thấp hơn)','✅ Còn nguyên, vẫn tăng tốt'], answer:0,
+    okText:'Đúng! Giá vừa tạo một ĐÁY thấp hơn đáy trước → "Break of Structure". Xu hướng tăng đã bị bẻ gãy — cảnh báo đảo chiều.',
+    badText:'Nhìn lại đáy cuối: nó thủng xuống DƯỚI đáy trước đó. Đó là phá vỡ cấu trúc tăng.'});
+
+  // 8. ý nghĩa của Break of Structure
+  L.push({type:'choice', candles:null, prompt:'Khi xu hướng tăng bị PHÁ VỠ cấu trúc (thủng đáy gần nhất), điều đó gợi ý gì?', hint:'',
+    options:['Xu hướng tăng có thể đã kết thúc — cẩn thận','Chắc chắn 100% giá sẽ tăng tiếp','Không có ý nghĩa gì'], answer:0,
+    okText:'Đúng! Phá vỡ cấu trúc là TÍN HIỆU CẢNH BÁO trend có thể đảo — nhưng nhớ: chỉ là "có thể", không bao giờ chắc chắn 100%.',
+    badText:'Phá vỡ cấu trúc gợi ý xu hướng tăng CÓ THỂ đã kết thúc. Trong trade không có gì là chắc chắn 100%.'});
+
+  return L;
+}
+
+/* ---------- Định nghĩa bài học Unit 3: Quản lý rủi ro ---------- */
+function buildUnit3(){
+  const L = [];
+
+  // 1. điều đầu tiên phải xác định
+  L.push({type:'choice', candles:null,
+    prompt:'Trước khi vào BẤT KỲ lệnh nào, điều ĐẦU TIÊN phải xác định là gì?', hint:'',
+    options:['🛡️ Điểm dừng lỗ (stop) — sẽ thoát ở đâu nếu mình sai','💰 Sẽ lời được bao nhiêu','🔮 Cảm giác thị trường hôm nay'], answer:0,
+    okText:'Đúng! Luôn biết "mình sai thì thoát ở đâu" TRƯỚC khi vào. Không có stop = không biết mình mạo hiểm bao nhiêu = cờ bạc.',
+    badText:'Sai. Thứ đầu tiên luôn là STOP LOSS — phải biết thoát ở đâu nếu sai, trước cả khi nghĩ đến lời.'});
+
+  // 2. slider: % rủi ro mỗi lệnh
+  L.push({type:'slider', candles:null,
+    prompt:'Tài khoản $1.000. Mỗi lệnh nên mạo hiểm tối đa bao nhiêu % để SỐNG SÓT lâu dài?',
+    hint:'Kéo thanh và nhìn số tiền mất nếu lệnh thua.',
+    min:0, max:20, step:0.5, start:10, endL:'0%', endR:'20%',
+    readout:v=>`Rủi ro mỗi lệnh: <b>${v}%</b><br>Mỗi lệnh thua mất: <b style="color:#ff4b4b">$${(1000*v/100).toFixed(0)}</b>`,
+    okMin:0.5, okMax:2,
+    okText:'Chuẩn! Dân chuyên nghiệp chỉ rủi ro 1–2% mỗi lệnh. Nhờ vậy thua 10 lệnh liên tiếp vẫn còn ~80% vốn để gỡ.',
+    badText:'Quá cao! Mức an toàn là 1–2% mỗi lệnh. Rủi ro lớn → chỉ vài lệnh thua là cháy, không kịp gỡ.'});
+
+  // 3. slider: công thức khối lượng lệnh (viên ngọc)
+  L.push({type:'slider', candles:null,
+    prompt:'Vốn $1.000, rủi ro 1% (=$10). Stop cách giá vào 2%. Kéo chọn KHỐI LƯỢNG lệnh sao cho dính stop chỉ mất đúng $10.',
+    hint:'Công thức: Khối lượng = tiền rủi ro ÷ khoảng cách stop = 10 ÷ 2%.',
+    min:0, max:1000, step:10, start:200, endL:'$0', endR:'$1.000',
+    readout:v=>`Khối lượng lệnh: <b>$${v}</b><br>Dính stop (giá ngược 2%) sẽ mất: <b style="color:#ff4b4b">$${(v*0.02).toFixed(2)}</b>`,
+    correct:500, tolerance:40,
+    okText:'Hoàn hảo! $10 ÷ 2% = $500. Đây là công thức quan trọng nhất: Khối lượng = (Vốn × %rủi ro) ÷ khoảng cách stop.',
+    badText:'Chưa đúng. Cần mất đúng $10. Vì stop cách 2%, khối lượng phải là 10 ÷ 0,02 = $500.'});
+
+  // 4. slider: tỷ lệ Lời/Lỗ (R:R)
+  L.push({type:'slider', candles:null,
+    prompt:'Vào $100, stop $98 (rủi ro $2 = 1R). Kéo MỤC TIÊU chốt lời sao cho tỷ lệ Lời/Lỗ ít nhất 2:1.',
+    hint:'R:R = (mục tiêu − giá vào) ÷ rủi ro. Cần ≥ 2.',
+    min:100, max:112, step:0.5, start:101, endL:'$100', endR:'$112',
+    readout:v=>`Mục tiêu: <b>$${v.toFixed(1)}</b><br>Lời nếu trúng: <b style="color:#58cc02">$${(v-100).toFixed(1)}</b> = <b>${((v-100)/2).toFixed(1)}R</b>`,
+    okMin:104, okMax:112,
+    okText:'Đúng! Mục tiêu $104 = lời $4 = 2R. Với R:R 2:1, anh chỉ cần thắng hơn 34% số lệnh là đã có lãi.',
+    badText:'Chưa đủ. Cần lời ≥ 2R, tức mục tiêu từ $104 trở lên (lời $4 = gấp đôi rủi ro $2).'});
+
+  // 5. toán của sự sống còn (risk of ruin)
+  L.push({type:'choice', candles:null,
+    prompt:'Tài khoản $1.000, mỗi lệnh rủi ro tới 20%. Thua 5 lệnh liên tiếp (rất bình thường) thì còn lại bao nhiêu?', hint:'',
+    options:['😱 ~$330 — mất 2/3 tài khoản','😎 ~$900 — vẫn ổn','🤔 Đúng $0 — cháy sạch'], answer:0,
+    okText:'Đúng! 1000 × 0,8⁵ ≈ $328. Chỉ 5 lệnh thua đã bay 2/3 vốn. Đây chính là lý do KHÔNG rủi ro lớn mỗi lệnh.',
+    badText:'Toán phũ phàng: 1000 × 0,8⁵ ≈ $328. Mất 2/3 tài khoản chỉ sau 5 lệnh thua. Rủi ro lớn = tự sát.'});
+
+  // 6. expectancy: win rate không phải tất cả
+  L.push({type:'choice', candles:null,
+    prompt:'Anh chỉ THẮNG 40% số lệnh. Nhưng mỗi lệnh thắng ăn 3R, mỗi lệnh thua mất 1R. Dài hạn anh sẽ?', hint:'',
+    options:['📈 Có lãi đều — vì lời lớn hơn lỗ nhiều','📉 Thua, vì thắng dưới 50%','➖ Hòa vốn'], answer:0,
+    okText:'Đúng! Kỳ vọng = 0,4×3 − 0,6×1 = +0,6R mỗi lệnh → LÃI đều. Tỷ lệ thắng KHÔNG quan trọng bằng Lời/Lỗ.',
+    badText:'Sai lầm phổ biến! Tính kỳ vọng: 0,4×3 − 0,6×1 = +0,6R/lệnh → vẫn LÃI dù thua nhiều hơn thắng.'});
+
+  // 7. quy tắc vàng
+  L.push({type:'choice', candles:null,
+    prompt:'Quy tắc SỐNG CÒN số 1 của trader là gì?', hint:'',
+    options:['🛡️ Bảo vệ vốn: rủi ro nhỏ mỗi lệnh để sống qua chuỗi thua','🎯 Tìm cách thắng cho bằng được mọi lệnh','🎰 Dồn hết vốn vào lệnh "chắc ăn"'], answer:0,
+    okText:'Chính xác! "Còn vốn là còn cơ hội." Bảo vệ vốn quan trọng hơn kiếm lời. Sống sót đủ lâu thì edge mới phát huy.',
+    badText:'Không. Quy tắc số 1 là BẢO VỆ VỐN — rủi ro nhỏ để sống sót. Không lệnh nào "chắc ăn" 100%.'});
+
+  return L;
+}
+
+/* ---------- Định nghĩa bài học Unit 4: Setup đầu tiên (chấm TƯ DUY, không chấm kết quả) ---------- */
+function buildUnit4(){
+  const L = [];
+
+  // 1. confluence
+  L.push({type:'choice', candles:null,
+    prompt:'Một SETUP đáng vào cần điều gì?', hint:'',
+    options:['✅ Nhiều yếu tố đồng thuận (xu hướng + vùng giá + stop rõ + R:R tốt)','🎯 Chỉ cần 1 tín hiệu đẹp là đủ','🔮 Cảm giác chắc thắng'], answer:0,
+    okText:'Đúng! Gọi là "confluence" — nhiều lý do cùng chỉ một hướng. Vào lệnh vì 1 tín hiệu lẻ là cách thua nhanh nhất.',
+    badText:'Chưa đúng. Setup tốt cần NHIỀU yếu tố đồng thuận cùng lúc, không phải một tín hiệu lẻ hay cảm giác.'});
+
+  // 2. decision: setup tốt -> Vào (kết quả THẮNG)
+  let s2 = fromPivots([100,114,107,123,116], 3);
+  L.push({type:'decision', candles:s2.candles, prompt:'Đọc setup rồi quyết định:',
+    context:'🔼 Xu hướng: <b>TĂNG</b> (đỉnh đáy cao dần)<br>📍 Giá vừa chạm lại <b>HỖ TRỢ</b><br>🛡️ Stop: ngay dưới hỗ trợ — rõ ràng<br>🎯 R:R tới kháng cự: <b>2.5</b>',
+    options:['🟢 Vào lệnh','🟡 Đợi thêm','🔴 Bỏ qua'], answer:0, winRate:62, forceOutcome:'win',
+    okText:'Đúng! Đủ confluence: thuận xu hướng + tại hỗ trợ + stop rõ + R:R tốt. Đây là lúc đáng vào.',
+    badText:'Setup này đủ điều kiện để VÀO: thuận xu hướng, tại hỗ trợ, stop rõ, R:R 2.5.'});
+
+  // 3. decision: ngược xu hướng -> Bỏ
+  let s3 = fromPivots([130,116,124,108,115], 3);
+  L.push({type:'decision', candles:s3.candles, prompt:'Đọc setup rồi quyết định:',
+    context:'🔽 Xu hướng: <b>GIẢM</b> (đỉnh đáy thấp dần)<br>📍 Bạn muốn MUA vì thấy "giá rẻ"<br>🛡️ Stop: không biết đặt đâu<br>🎯 R:R: <b>dưới 1</b>',
+    options:['🟢 Vào lệnh','🟡 Đợi thêm','🔴 Bỏ qua'], answer:2,
+    okText:'Đúng! Mua ngược xu hướng giảm, stop mờ mịt, R:R tệ — không có lợi thế. BỎ QUA là quyết định giỏi. Không vào lệnh cũng là một kỹ năng.',
+    badText:'Nên BỎ. Mua ngược trend giảm + không stop rõ + R:R<1 = không lợi thế. "Giá rẻ" không phải lý do để vào.'});
+
+  // 4. TRỌNG TÂM: quyết định hoàn hảo -> nhưng THUA
+  let s4 = fromPivots([100,116,108,126,118], 3);
+  L.push({type:'decision', candles:s4.candles, prompt:'Đọc setup rồi quyết định:',
+    context:'🔼 Xu hướng: <b>TĂNG</b><br>📍 Giá tại <b>HỖ TRỢ</b> mạnh<br>🛡️ Stop rõ ràng dưới hỗ trợ<br>🎯 R:R: <b>3.0</b> — rất tốt',
+    options:['🟢 Vào lệnh','🟡 Đợi thêm','🔴 Bỏ qua'], answer:0, winRate:60, forceOutcome:'loss',
+    okText:'Quyết định CHUẨN — đủ mọi điều kiện. Giờ xem điều quan trọng nhất của cả app 👇',
+    badText:'Đây là setup đáng VÀO (đủ confluence). Nhưng hãy xem điều quan trọng này 👇'});
+
+  // 5. thua dù đúng quy trình
+  L.push({type:'choice', candles:null,
+    prompt:'Bạn vào một lệnh ĐÚNG quy trình nhưng nó THUA. Bạn nên?', hint:'',
+    options:['🧊 Chấp nhận — quyết định đúng, thua là xác suất. Giữ nguyên hệ thống','🔥 Bỏ ngay chiến lược, nó vô dụng','🎲 Gấp đôi lệnh sau để gỡ lại'], answer:0,
+    okText:'Đúng! Một lệnh thua không phủ nhận một quyết định tốt. Đánh giá mình theo QUY TRÌNH, không theo kết quả một lần. Bỏ hệ thống sau 1 lần thua = không bao giờ có hệ thống.',
+    badText:'Sai. Quyết định đúng mà thua là bình thường (xác suất). Giữ nguyên hệ thống — đừng bỏ chiến lược, đừng gỡ gạc.'});
+
+  // 6. thắng dù sai quy trình
+  L.push({type:'choice', candles:null,
+    prompt:'Bạn vào lệnh SAI quy trình (all-in, không stop) nhưng nó THẮNG đậm. Đây là?', hint:'',
+    options:['⚠️ May mắn nguy hiểm — quy trình vẫn sai, lặp lại sẽ cháy','🏆 Bằng chứng mình có tài','🔁 Nên làm y vậy lần sau'], answer:0,
+    okText:'Chính xác! Kết quả tốt từ quy trình tệ là cái bẫy nguy hiểm nhất — nó dạy bạn thói quen sẽ giết tài khoản. Chấm mình theo quy trình, kể cả khi thắng.',
+    badText:'Cẩn thận! Thắng nhờ liều = may rủi, không phải tài năng. Quy trình sai mà lặp lại sẽ cháy. Đừng để 1 lần thắng dạy hư mình.'});
+
+  // 7. tổng hợp: Đợi
+  let s7 = fromPivots([100,118,109,120], 3);
+  L.push({type:'decision', candles:s7.candles, prompt:'Đọc setup rồi quyết định:',
+    context:'🔼 Xu hướng: <b>TĂNG</b><br>📍 Giá đang ở <b>GIỮA vùng</b>, xa hỗ trợ lẫn kháng cự<br>🛡️ Stop phải đặt xa → R:R chỉ <b>1.2</b><br>⏳ Chưa có nến xác nhận',
+    options:['🟢 Vào lệnh','🟡 Đợi giá về vùng đẹp','🔴 Bỏ hẳn coin này'], answer:1,
+    okText:'Đúng! Thuận xu hướng nhưng giá ở giữa vô định, R:R kém. Kiên nhẫn ĐỢI giá về vùng đẹp. Phần lớn thời gian, "không làm gì" mới là nước đi đúng.',
+    badText:'Nên ĐỢI. Đúng xu hướng nhưng giá ở giữa, R:R chỉ 1.2 — chưa đáng vào. Kiên nhẫn chờ giá về hỗ trợ.'});
+
+  return L;
+}
+
+/* ---------- Định nghĩa bài học Unit 5: Tâm lý thực chiến ---------- */
+function buildUnit5(){
+  const L = [];
+
+  // 1. FOMO (decision có chart đã pump mạnh)
+  let f = fromPivots([100,103,101,106,104,118,136], 2);
+  L.push({type:'decision', candles:f.candles, prompt:'Đọc tình huống rồi quyết định:',
+    context:'🚀 Coin vừa <b>tăng ~35% trong 1 giờ</b><br>😰 Bạn CHƯA kịp vào, sợ bỏ lỡ chuyến tàu<br>📍 Giá đang ở rất xa vùng hỗ trợ<br>🛡️ Vào bây giờ thì stop ở đâu? Không rõ',
+    options:['🟢 Vào ngay kẻo lỡ!','🟡 Đợi giá điều chỉnh về vùng đẹp (hoặc bỏ)','🔴 All-in cho nhanh'], answer:1,
+    okText:'Đúng! Đây là FOMO. Đu theo sau khi giá đã chạy = mua đỉnh, stop mờ mịt, R:R tệ. Tàu này lỡ thì có tàu khác. Kiên nhẫn đợi nhịp điều chỉnh.',
+    badText:'Cẩn thận FOMO! Giá đã chạy 35%, vào lúc này là mua đỉnh. "Sợ bỏ lỡ" không phải lý do vào lệnh. Đợi điều chỉnh hoặc bỏ.'});
+
+  // 2. revenge trading
+  L.push({type:'choice', candles:null,
+    prompt:'Bạn vừa THUA 2 lệnh liên tiếp, đang cay cú. Muốn vào lệnh thứ 3 ngay với khối lượng GẤP ĐÔI để gỡ. Nên?', hint:'',
+    options:['🧊 Dừng lại, đứng dậy nghỉ — gỡ gạc lúc nóng là cách cháy nhanh nhất','🔥 Vào gấp đôi, phải gỡ bằng được','🎲 Vào gấp ba cho chắc'], answer:0,
+    okText:'Đúng! Đây là "revenge trading". Quyết định lúc tức giận luôn tệ, và tăng khối lượng để gỡ = phá vỡ quản lý rủi ro. Tắt máy, đi dạo. Tiền vẫn ở đó ngày mai.',
+    badText:'Sai — đây chính là bẫy gỡ gạc giết tài khoản nhanh nhất. Thua liên tiếp + nóng giận + tăng khối lượng = công thức cháy. Phải DỪNG lại.'});
+
+  // 3. cut losses / let profits run
+  L.push({type:'choice', candles:null,
+    prompt:'Lệnh A đang LỜI, lệnh B đang LỖ (đã chạm vùng mình tính là sai). Cách làm ĐÚNG là?', hint:'',
+    options:['✂️ Cắt lỗ B theo kế hoạch, để lời A chạy tới mục tiêu','😨 Chốt A ngay kẻo bay mất lời, giữ B chờ gỡ','🤝 Đóng cả hai cho yên tâm'], answer:0,
+    okText:'Đúng! Quy tắc vàng: "cắt lỗ nhanh, để lời chạy". Bản năng lại xui ngược: chốt non lời + ôm lỗ chờ gỡ — đó là lý do nhiều người thua dài hạn.',
+    badText:'Ngược rồi! Bản năng "chốt lời sớm + ôm lỗ chờ gỡ" chính là cái bẫy. Đúng phải là: CẮT LỖ B nhanh, ĐỂ LỜI A chạy.'});
+
+  // 4. moving stop
+  L.push({type:'choice', candles:null,
+    prompt:'Giá đang tiến sát stop loss của bạn. Bạn nên?', hint:'',
+    options:['🛡️ Giữ nguyên stop — đó là mức mình đặt khi đầu óc tỉnh táo','↔️ Dời stop ra xa để khỏi bị quét','🙈 Bỏ stop luôn, chắc giá sẽ quay lại'], answer:0,
+    okText:'Đúng! Dời/bỏ stop = từ chối nhận mình sai. Nó biến một khoản lỗ nhỏ đã định trước thành thảm họa không kiểm soát. Tôn trọng cái stop của chính mình.',
+    badText:'Không! Dời hay bỏ stop là sai lầm chết người — nó biến lỗ nhỏ thành lỗ khổng lồ. Cái stop được đặt lúc tỉnh táo; hãy tôn trọng nó.'});
+
+  // 5. overtrading / boredom
+  L.push({type:'choice', candles:null,
+    prompt:'Hôm nay quét cả ngày không có setup nào đẹp. Bạn nên?', hint:'',
+    options:['🧘 Không trade — cầm tiền mặt cũng là một vị thế. Chờ setup tốt','😑 Vào vài lệnh nhỏ cho đỡ chán','🔍 Ép mình tìm bằng được một lệnh để vào'], answer:0,
+    okText:'Đúng! "Không làm gì" là một kỹ năng. Overtrading vì buồn tay đốt tiền và sự tập trung. Cầm tiền chờ kèo ngon mới là cao thủ.',
+    badText:'Sai. Trade vì buồn tay = overtrading, đốt phí và tâm lý. Không có kèo đẹp thì NGHỈ — cầm tiền mặt cũng là một vị thế hợp lệ.'});
+
+  // 6. trading while tilted
+  L.push({type:'choice', candles:null,
+    prompt:'Bạn vừa cãi nhau, đang rất căng thẳng. Có nên ngồi vào trade không?', hint:'',
+    options:['🚫 Không — cảm xúc mạnh làm quyết định tệ đi. Nghỉ đã','💢 Có, trade giúp xả stress','🍷 Có, mà đánh lớn cho phê'], answer:0,
+    okText:'Đúng! Trạng thái cảm xúc quyết định chất lượng lệnh. Tức giận, mệt, say... đều làm anh đánh tệ. Trader giỏi biết khi nào KHÔNG nên ngồi vào bàn.',
+    badText:'Không nên. Cảm xúc mạnh = quyết định tệ. Trade lúc đang căng thẳng là tự đưa tiền cho thị trường. Nghỉ cho tỉnh đã.'});
+
+  // 7. greed + leverage
+  L.push({type:'choice', candles:null,
+    prompt:'Một "kèo chắc thắng 100%", bạn muốn dùng đòn bẩy x50 dồn hết vốn. Đây là?', hint:'',
+    options:['⚠️ Tham lam nguy hiểm — không kèo nào chắc 100%, x50 all-in là tự sát','💎 Hợp lý, vì chắc thắng mà','🚀 Nên x100 cho nhanh giàu'], answer:0,
+    okText:'Đúng! Không có gì "chắc 100%" trong trade. x50 all-in nghĩa là chỉ cần giá ngược 2% là cháy sạch. Đòn bẩy lớn + tham = về số 0. Nhớ Unit 3.',
+    badText:'Cực kỳ nguy hiểm! "Chắc thắng" là ảo tưởng. x50 all-in = giá ngược 2% là mất hết. Đây là tham lam, không phải tự tin.'});
+
+  // 8. cầu nối Unit 6
+  L.push({type:'choice', candles:null,
+    prompt:'Vũ khí mạnh nhất để chống lại cảm xúc khi trade là gì?', hint:'',
+    options:['📓 Kế hoạch viết sẵn + nhật ký giao dịch, và kỷ luật tuân theo','🔮 Linh cảm nhạy bén','📣 Theo nhiều hội nhóm tín hiệu'], answer:0,
+    okText:'Đúng! Cảm xúc đánh bại trí nhớ và ý chí. Một kế hoạch viết sẵn + nhật ký lại không biết nói dối. Đó chính là nội dung Unit 6 tiếp theo.',
+    badText:'Không. Linh cảm và hội nhóm không cứu được anh lúc hoảng loạn. Thứ cứu anh là KẾ HOẠCH viết sẵn + NHẬT KÝ + kỷ luật (Unit 6).'});
+
+  return L;
+}
+
+/* ---------- Định nghĩa bài học Unit 6: Nhật ký & tự sửa (tốt nghiệp) ---------- */
+function buildUnit6(){
+  const L = [];
+
+  // 1. nhật ký nên ghi gì
+  L.push({type:'choice', candles:null,
+    prompt:'Một cuốn nhật ký giao dịch HỮU ÍCH cần ghi gì?', hint:'',
+    options:['📝 Lý do vào/ra + stop + R:R + cảm xúc + có theo kế hoạch không','💵 Chỉ cần ghi lời/lỗ mỗi ngày','🧠 Không cần ghi, nhớ trong đầu là đủ'], answer:0,
+    okText:'Đúng! Nhật ký chỉ ghi tiền thì vô dụng. Phải ghi QUY TRÌNH — lý do, cảm xúc, có đúng kế hoạch không — thì mới soi ra mình sai ở đâu.',
+    badText:'Chưa đủ. Ghi mỗi lời/lỗ không cho biết TẠI SAO. Nhật ký tốt ghi lý do vào/ra, stop, R:R, cảm xúc và mức độ tuân thủ kế hoạch.'});
+
+  // 2. soi lỗi: dời stop
+  L.push({type:'decision', candles:null, prompt:'Đọc trang nhật ký này — lỗi LỚN NHẤT là gì?',
+    context:'📓 <b>Lệnh LONG BTC</b><br>Vào $100, stop ban đầu $98<br>Giá tụt gần $98 → mình DỜI stop xuống $95<br>Kết quả: −$5 (lẽ ra chỉ −$2)<br>Cảm xúc ghi lại: "không tin là mình sai"',
+    options:['↔️ Dời stop khi giá đi ngược — biến lỗ nhỏ thành lỗ lớn','📈 Sai vì đã chọn lệnh LONG','✂️ Chốt lời quá sớm'], answer:0,
+    okText:'Đúng! Dời stop = từ chối nhận sai, biến −$2 đã định thành −$5. Đây là lỗi lặp đáng ghi to trong nhật ký để lần sau không tái phạm.',
+    badText:'Lỗi nằm ở chỗ DỜI STOP. Stop đặt lúc tỉnh táo là $98; dời xuống $95 vì "không tin mình sai" đã nhân đôi khoản lỗ.'});
+
+  // 3. soi lỗi: FOMO + overtrading buổi tối
+  L.push({type:'decision', candles:null, prompt:'Đọc nhật ký một tuần — MẪU LỖI lặp lại là gì?',
+    context:'📓 <b>Tổng kết tuần</b><br>3 lệnh thua nặng nhất đều vào lúc <b>23h–24h</b><br>Cả 3 đều mua ĐUỔI sau khi giá đã chạy mạnh<br>Không lệnh nào có trong kế hoạch buổi sáng<br>Cảm xúc: buồn chán, đang lướt điện thoại',
+    options:['🌙 FOMO + overtrading buổi tối lúc buồn chán → đặt luật KHÔNG trade sau 22h','🎰 Chỉ là xui, tuần sau sẽ khác','⚡ Cần dùng đòn bẩy cao hơn để gỡ'], answer:0,
+    okText:'Đúng! Nhật ký lộ ra MẪU: cứ buổi tối buồn chán là FOMO mua đuổi ngoài kế hoạch. Tìm ra mẫu rồi → đặt một LUẬT cụ thể (vd cấm trade sau 22h). Đó là cách nhật ký giúp anh tiến bộ.',
+    badText:'Đây không phải xui. Nhật ký cho thấy một MẪU rõ ràng: tối muộn + buồn chán → FOMO mua đuổi. Giải pháp là một luật chặn lại, không phải đòn bẩy cao hơn.'});
+
+  // 4. chấm theo quy trình (nối U4)
+  L.push({type:'choice', candles:null,
+    prompt:'Cuối tuần review, bạn đánh giá mỗi lệnh dựa trên điều gì là CHÍNH?', hint:'',
+    options:['✅ Mình có tuân theo kế hoạch không (quy trình), bất kể thắng hay thua','💰 Lệnh đó lời hay lỗ','😌 Cảm giác lúc đó thế nào'], answer:0,
+    okText:'Đúng! Như Unit 4: chấm theo QUY TRÌNH. Một lệnh đúng kế hoạch mà thua vẫn đáng "khen"; một lệnh phá luật mà thắng vẫn đáng "phạt". Đó là cách xây kỷ luật.',
+    badText:'Chưa đúng. Chấm theo lời/lỗ sẽ thưởng cho cả những lần liều ăn may. Hãy chấm theo QUY TRÌNH — có tuân kế hoạch không.'});
+
+  // 5. mẫu đủ lớn (bài học walk-forward)
+  L.push({type:'choice', candles:null,
+    prompt:'Chiến lược mới của bạn THUA 4 trong 6 lệnh đầu. Kết luận đúng là?', hint:'',
+    options:['📊 6 lệnh quá ít để kết luận — cần mẫu lớn hơn (vài chục lệnh) mới biết','🗑️ Chiến lược vô dụng, bỏ ngay lập tức','💸 Tăng khối lượng để gỡ cho nhanh'], answer:0,
+    okText:'Đúng! 6 lệnh là nhiễu, không phải tín hiệu. Ngay cả chiến lược tốt cũng có chuỗi thua ngắn. Cần mẫu đủ lớn (và tốt nhất là kiểm thử ngoài mẫu) mới đánh giá được.',
+    badText:'Sai. 6 lệnh quá ít để kết luận bất cứ điều gì — đó là nhiễu thống kê. Đừng vội bỏ hay gỡ gạc; cần mẫu lớn hơn nhiều.'});
+
+  // 6. sửa một lỗi mỗi lần
+  L.push({type:'choice', candles:null,
+    prompt:'Nhật ký cho thấy bạn đang mắc 5 lỗi khác nhau. Nên làm gì?', hint:'',
+    options:['🎯 Sửa MỘT lỗi tệ nhất trước, theo dõi, rồi mới tới lỗi sau','🌀 Sửa cả 5 cùng lúc cho nhanh','🤷 Bỏ qua, cứ trade tiếp rồi tính'], answer:0,
+    okText:'Đúng! Sửa 5 thứ cùng lúc = không biết cái nào hiệu quả và dễ bỏ cuộc. Mỗi lần một lỗi, đo lường, rồi tiếp. Tiến bộ nhỏ mà chắc.',
+    badText:'Chưa tối ưu. Ôm đồm 5 lỗi cùng lúc dễ nản và rối. Tập trung sửa MỘT lỗi tệ nhất trước, theo dõi kết quả, rồi mới sang lỗi kế.'});
+
+  // 7. soi nhật ký: lệnh thua nhưng đúng quy trình
+  L.push({type:'decision', candles:null, prompt:'Đọc trang nhật ký — đánh giá lệnh này thế nào?',
+    context:'📓 <b>Lệnh LONG ETH</b><br>Đúng xu hướng tăng, vào tại hỗ trợ<br>Stop rõ ràng, R:R 2.5, rủi ro đúng 1%<br>Hoàn toàn theo kế hoạch sáng<br>Kết quả: −1R (giá quét stop rồi đi tiếp)',
+    options:['👍 Lệnh TỐT dù thua — đúng kế hoạch, đúng rủi ro. Giữ nguyên cách làm','👎 Lệnh tệ vì cuối cùng mất tiền','🔄 Phải đổi chiến lược ngay'], answer:0,
+    okText:'Đúng! Đây là lệnh TỐT bị thua — chuyện hoàn toàn bình thường (xác suất). Trong nhật ký, ghi "✓ đúng quy trình". Giữ nguyên cách làm, đừng sửa thứ không hỏng.',
+    badText:'Sai góc nhìn. Lệnh này theo đúng kế hoạch + rủi ro chuẩn → là lệnh TỐT, chỉ là thua theo xác suất. Đừng đổi chiến lược vì một kết quả.'});
+
+  // 8. vòng lặp tiến bộ (tốt nghiệp)
+  L.push({type:'choice', candles:null,
+    prompt:'Vòng lặp giúp một trader thật sự tiến bộ là gì?', hint:'',
+    options:['🔁 Ghi nhật ký → review → tìm lỗi lặp → sửa 1 thứ → lặp lại','📡 Xem thật nhiều tín hiệu và hội nhóm mỗi ngày','🏆 Tìm cho ra chiến lược thắng 100%'], answer:0,
+    okText:'Chính xác — và anh vừa hoàn thành cả 6 unit! Không có chiến lược thắng 100%. Cái đưa anh đi xa là VÒNG LẶP TỰ SỬA này. Giờ là lúc thực hành trên tài khoản demo.',
+    badText:'Không. Tín hiệu hay "chén thánh" không làm anh giỏi lên. Thứ làm anh tiến bộ là vòng lặp: nhật ký → review → tìm lỗi → sửa 1 thứ → lặp lại.'});
+
+  return L;
+}
+
+/* ---------- Sổ đăng ký unit + nội dung kết quả ---------- */
+let CURRENT_UNIT = 1;
+const BUILDERS = { 1:buildUnit1, 2:buildUnit2, 3:buildUnit3, 4:buildUnit4, 5:buildUnit5, 6:buildUnit6 };
+const SUBTITLE = {
+  1:'Anh vừa đọc được biểu đồ nến đầu tiên.',
+  2:'Anh vừa đọc được cấu trúc thị trường.',
+  3:'Anh vừa nắm được xương sống của sự sống còn.',
+  4:'Anh vừa tư duy như một trader thật — theo quy trình, không theo kết quả.',
+  5:'Anh vừa học cách không để cảm xúc phá hỏng kế hoạch.',
+  6:'🎓 Anh đã hoàn thành cả 6 unit nền tảng. Giờ là lúc thực hành thật (demo).',
+};
+const TAKEAWAY = {
+  1:'<b>💡 Bài học rút ra:</b> Đọc được nến mới chỉ là bước 1. '+
+    'Điều quan trọng nhất sắp tới (Unit 3): <b>quản lý rủi ro</b>. '+
+    'Vì một quyết định ĐÚNG vẫn có thể thua — và đó là chuyện bình thường trong trade.',
+  2:'<b>💡 Bài học rút ra:</b> Đọc cấu trúc giúp anh biết thị trường ĐANG ở đâu — tăng, giảm hay đi ngang, '+
+    'và khi nào trend có nguy cơ đảo. Bước tới <b>Unit 3 — Quản lý rủi ro</b>: biết cấu trúc rồi, '+
+    'vẫn phải biết đặt cược BAO NHIÊU cho an toàn.',
+  3:'<b>💡 Bài học rút ra:</b> Công thức xương sống: <b>Khối lượng = (Vốn × %rủi ro) ÷ khoảng cách stop</b>. '+
+    'Rủi ro nhỏ + Lời/Lỗ tốt = sống sót và có lãi dài hạn, kể cả khi thắng dưới 50%. '+
+    'Bước tới <b>Unit 4</b>: ghép cấu trúc + rủi ro thành một lệnh hoàn chỉnh.',
+  4:'<b>💡 Bài học rút ra:</b> Trader giỏi chấm mình theo <b>chất lượng quyết định</b>, không theo kết quả một lần. '+
+    'Quyết định đúng vẫn có thể thua; quyết định ẩu vẫn có thể thắng — cả hai đều là xác suất. '+
+    'Cứ lặp lại quy trình tốt, lợi thế sẽ tự thắng về dài hạn.',
+  5:'<b>💡 Bài học rút ra:</b> Kẻ thù lớn nhất của trader là chính cảm xúc của mình — FOMO, gỡ gạc, tham, sợ. '+
+    'Không diệt được cảm xúc, chỉ có thể <b>không hành động theo nó</b> bằng kế hoạch + kỷ luật. '+
+    'Bước tới <b>Unit 6 — Nhật ký</b>: công cụ biến kỷ luật thành thói quen.',
+  6:'<b>🎓 Chúc mừng — anh đã đi hết 6 unit nền tảng!</b> Nhưng đây mới là bệ phóng, không phải đích. '+
+    'Kỹ năng thật đến từ <b>thực hành trên tài khoản DEMO</b> + ghi nhật ký + lặp lại vòng tự sửa. '+
+    'Không có chén thánh; chỉ có quy trình tốt lặp đủ lâu. Chúc anh trade an toàn và kỷ luật.',
+};
+
+/* ---------- Vòng chơi ---------- */
+let LESSON=[], idx=0, picked=null, answered=false, correctCount=0, totalAnswered=0;
+let REPLAY_TIMER=null;
+
+function renderPath(){
+  const p = document.getElementById('path'); p.innerHTML='';
+  UNITS.forEach((u,i)=>{
+    if(i>0){ const c=document.createElement('div'); c.className='connector'; p.appendChild(c); }
+    const node=document.createElement('div'); node.className='node '+u.status;
+    const badge = u.status==='active' ? '<div class="start-badge">BẮT ĐẦU</div>' : '';
+    const icon = u.status==='locked' ? '🔒' : (u.status==='done' ? '✓' : u.icon);
+    node.innerHTML = `<button class="circle">${icon}</button>${badge}
+       <div class="label">Unit ${u.id}: ${u.label}</div><div class="sub">${u.sub}</div>`;
+    node.querySelector('.circle').onclick = ()=>{
+      if(u.status==='active' || u.status==='done') startLesson(u.id);
+      else if(u.status==='locked') flashLocked(node);
+    };
+    p.appendChild(node);
+  });
+}
+function flashLocked(node){
+  const lb=node.querySelector('.label'); const txt=lb.textContent;
+  lb.textContent='🔒 Hoàn thành unit trước đã nhé!';
+  setTimeout(()=>{ lb.textContent=txt; }, 1400);
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('result').classList.remove('active');
+  if(id==='result') document.getElementById('result').classList.add('active');
+  else document.getElementById(id).classList.add('active');
+}
+
+function startLesson(unitId){
+  const build = BUILDERS[unitId];
+  if(!build){ alert('🚧 Nội dung Unit này đang được xây. Sắp có nhé!'); return; }
+  audio();
+  CURRENT_UNIT = unitId;
+  LESSON = build(); idx=0; correctCount=0; totalAnswered=0;
+  STATE.hearts=5; updateTop();
+  show('lesson'); renderExercise();
+}
+function quitLesson(){ if(confirm('Thoát bài học? Tiến độ bài này sẽ mất.')){ clearInterval(REPLAY_TIMER); goHome(); } }
+function goHome(){ clearInterval(REPLAY_TIMER); renderPath(); show('home'); }
+
+function renderExercise(){
+  clearInterval(REPLAY_TIMER);
+  const ex = LESSON[idx]; picked=null; answered=false;
+  document.getElementById('prog').style.width = (idx/LESSON.length*100)+'%';
+  document.getElementById('hint').textContent = ex.hint||'';
+  const fb=document.getElementById('feedback'); fb.style.display='none'; fb.className='feedback';
+  const cbtn=document.getElementById('checkBtn'); cbtn.className='btn gray'; cbtn.disabled=true; cbtn.textContent='Kiểm tra';
+  document.getElementById('contBtn').textContent='Tiếp tục';
+  const card=document.getElementById('chartCard');
+  const choices=document.getElementById('choices'); choices.innerHTML='';
+  document.getElementById('cv').onclick=null; // reset handler tap của bài trước
+
+  if(ex.type==='replay'){ streamReplay(ex); return; }
+
+  document.getElementById('prompt').textContent = ex.prompt;
+  document.getElementById('checkBar').style.display='block';
+
+  if(ex.candles){ card.style.display='block'; requestAnimationFrame(()=>drawChart(ex.candles,null)); }
+  else card.style.display='none';
+
+  if(ex.type==='tap'){
+    CV = document.getElementById('cv');
+    CV.onclick = (e)=>{
+      if(answered) return;
+      const i = candleAt(e.clientX);
+      if(i<0) return;
+      picked=i; sndTap();
+      drawChart(ex.candles, new Set([i]));
+      enableCheck();
+    };
+  } else if(ex.type==='choice'){
+    buildChoices(ex);
+  } else if(ex.type==='slider'){
+    buildSlider(ex);
+  } else if(ex.type==='decision'){
+    buildDecision(ex);
+  }
+}
+
+function buildDecision(ex){
+  const wrap=document.getElementById('choices');
+  if(ex.context){
+    const c=document.createElement('div'); c.className='context-card'; c.innerHTML=ex.context;
+    wrap.appendChild(c);
+  }
+  buildChoices(ex);
+}
+function decisionReveal(ex){
+  const wr=ex.winRate;
+  const outcome = ex.forceOutcome || (Math.random()*100<wr ? 'win':'loss');
+  const msg = outcome==='win'
+    ? 'tốt — nhưng đừng tưởng mình "giỏi" chỉ vì một lần thắng.'
+    : 'và quyết định của bạn VẪN đúng. Đây là xác suất, không phải lỗi của bạn. Cứ lặp lại quy trình tốt, lợi thế sẽ tự thắng về dài hạn.';
+  return `<div class="dist">
+    <div class="dist-label">Cùng setup này nếu lặp lại 100 lần:</div>
+    <div class="dist-bar"><span class="win" style="width:${wr}%">${wr} thắng</span><span class="loss" style="width:${100-wr}%">${100-wr} thua</span></div>
+    <div class="dist-outcome ${outcome}">🎲 Lần này: <b>${outcome==='win'?'THẮNG ✅':'THUA ❌'}</b> — ${msg}</div>
+  </div>`;
+}
+
+function buildSlider(ex){
+  const wrap=document.getElementById('choices');
+  const box=document.createElement('div'); box.className='slider-box';
+  const read=document.createElement('div'); read.className='slider-read';
+  const inp=document.createElement('input'); inp.type='range'; inp.className='slider';
+  inp.min=ex.min; inp.max=ex.max; inp.step=ex.step||1;
+  inp.value = (ex.start!=null?ex.start:ex.min);
+  const refresh=()=>{ read.innerHTML = ex.readout(parseFloat(inp.value)); };
+  inp.addEventListener('input',()=>{ if(answered) return; picked=parseFloat(inp.value); sndTap(); refresh(); enableCheck(); });
+  refresh();
+  const ends=document.createElement('div'); ends.className='slider-ends';
+  ends.innerHTML=`<span>${ex.endL!=null?ex.endL:ex.min}</span><span>${ex.endR!=null?ex.endR:ex.max}</span>`;
+  box.appendChild(read); box.appendChild(inp); box.appendChild(ends);
+  wrap.appendChild(box);
+}
+
+function buildChoices(ex){
+  const choices=document.getElementById('choices');
+  ex.options.forEach((opt,i)=>{
+    const b=document.createElement('button'); b.className='choice'; b.textContent=opt;
+    b.onclick=()=>{ if(answered) return; picked=i; sndTap();
+      choices.querySelectorAll('.choice').forEach(c=>c.classList.remove('sel'));
+      b.classList.add('sel'); enableCheck(); };
+    choices.appendChild(b);
+  });
+}
+
+function streamReplay(ex){
+  clearInterval(REPLAY_TIMER);
+  answered=false; picked=null;
+  document.getElementById('choices').innerHTML='';
+  document.getElementById('checkBar').style.display='none';
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('hint').textContent='Đang phát... nến hiện lần lượt theo thời gian.';
+  document.getElementById('prompt').innerHTML='<span class="live-dot"></span>'+ex.prompt;
+  document.getElementById('chartCard').style.display='block';
+  const total=ex.candles.length;
+  let n=1;
+  requestAnimationFrame(()=>drawChart(ex.candles.slice(0,1),null));
+  REPLAY_TIMER=setInterval(()=>{
+    n++;
+    drawChart(ex.candles.slice(0,n), n<total?new Set([n-1]):null);
+    sndTick();
+    if(n>=total){ clearInterval(REPLAY_TIMER); setTimeout(()=>revealReplay(ex),420); }
+  },300);
+}
+function revealReplay(ex){
+  drawChart(ex.candles,null);
+  document.getElementById('prompt').textContent = ex.question;
+  document.getElementById('hint').textContent = '';
+  const choices=document.getElementById('choices'); choices.innerHTML='';
+  const ctr=document.createElement('div'); ctr.className='replay-controls';
+  const rb=document.createElement('button'); rb.className='replay-btn'; rb.textContent='▶ Xem lại nến chạy';
+  rb.onclick=()=>streamReplay(ex); ctr.appendChild(rb); choices.appendChild(ctr);
+  buildChoices(ex);
+  document.getElementById('checkBar').style.display='block';
+}
+
+function enableCheck(){ const b=document.getElementById('checkBtn'); b.disabled=false; b.className='btn green greenD'; }
+
+function checkAnswer(){
+  if(picked===null) return;
+  const ex=LESSON[idx]; answered=true; totalAnswered++;
+  let ok;
+  if(ex.type==='tap'){
+    ok = ex.correct.includes(picked);
+    drawChart(ex.candles, new Set([picked]));
+  } else if(ex.type==='slider'){
+    ok = (ex.okMin!=null) ? (picked>=ex.okMin && picked<=ex.okMax)
+                          : (Math.abs(picked-ex.correct)<=ex.tolerance);
+  } else {
+    ok = (picked===ex.answer);
+    const ch=document.getElementById('choices').querySelectorAll('.choice');
+    ch[ex.answer].classList.add('ok');
+    if(!ok) ch[picked].classList.add('bad');
+  }
+  document.getElementById('checkBar').style.display='none';
+  const fb=document.getElementById('feedback'); fb.style.display='block'; fb.classList.add('show');
+  if(ok){
+    correctCount++; STATE.xp+=10;
+    fb.classList.add('good');
+    document.getElementById('fbTitle').innerHTML='✅ Chính xác!';
+    document.getElementById('fbText').textContent=ex.okText;
+    sndCorrect();
+  } else {
+    STATE.hearts=Math.max(0,STATE.hearts-1);
+    fb.classList.add('bad');
+    document.getElementById('fbTitle').innerHTML='❌ Chưa đúng';
+    document.getElementById('fbText').textContent=ex.badText;
+    sndWrong();
+    const hs=document.querySelector('.stat.heart'); hs.classList.add('shake');
+    setTimeout(()=>hs.classList.remove('shake'),420);
+  }
+  if(ex.type==='decision' && ex.winRate){
+    document.getElementById('fbText').innerHTML += decisionReveal(ex);
+  }
+  updateTop(); saveState();
+  if(STATE.hearts<=0){ document.getElementById('contBtn').textContent='Hết tim — thử lại'; }
+}
+
+function nextExercise(){
+  clearInterval(REPLAY_TIMER);
+  if(STATE.hearts<=0){ startLesson(); return; }
+  idx++;
+  if(idx>=LESSON.length){ finishLesson(); return; }
+  renderExercise();
+}
+
+function finishLesson(){
+  // streak theo NGÀY thật: chỉ tính 1 lần/ngày, +1 nếu hôm qua có chơi, reset nếu đứt chuỗi
+  const t = today();
+  if(STATE.lastPlayed !== t){
+    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    STATE.streak = (STATE.lastPlayed === yesterday) ? STATE.streak+1 : 1;
+    STATE.lastPlayed = t;
+  }
+  STATE.xp += 20;
+  updateTop(); sndFinish(); confetti();
+  const acc = totalAnswered? Math.round(correctCount/totalAnswered*100):0;
+  document.getElementById('prog').style.width='100%';
+  document.getElementById('r-xp').textContent = (correctCount*10+20);
+  document.getElementById('r-acc').textContent = acc+'%';
+  document.getElementById('r-emoji').textContent = acc>=80?'🏆':(acc>=50?'🎉':'💪');
+  document.getElementById('r-title').textContent = acc>=80?'Xuất sắc!':'Hoàn thành bài học!';
+  document.getElementById('r-sub').textContent = SUBTITLE[CURRENT_UNIT] || 'Hoàn thành bài học!';
+  document.getElementById('r-take').innerHTML = TAKEAWAY[CURRENT_UNIT] || TAKEAWAY[1];
+  // mở khoá unit kế tiếp (tổng quát theo unit vừa học)
+  const ci = UNITS.findIndex(u=>u.id===CURRENT_UNIT);
+  if(ci>=0) UNITS[ci].status='done';
+  if(UNITS[ci+1] && UNITS[ci+1].status==='locked') UNITS[ci+1].status='active';
+  saveState();
+  show('result');
+}
+
+function updateTop(){
+  document.getElementById('t-hearts').textContent=STATE.hearts;
+  document.getElementById('t-xp').textContent=STATE.xp;
+  document.getElementById('t-streak').textContent=STATE.streak;
+}
+
+window.addEventListener('resize',()=>{
+  const ex=LESSON[idx];
+  if(document.getElementById('lesson').classList.contains('active') && ex && ex.candles && !REPLAY_TIMER){
+    drawChart(ex.candles, picked!==null && answered ? new Set([picked]) : null);
+  }
+});
+
+loadState(); renderPath(); updateTop();
+</script>
+</body>
+</html>
