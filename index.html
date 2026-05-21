@@ -230,7 +230,7 @@
   <div class="result" id="result">
     <div class="emoji" id="r-emoji">🎉</div>
     <h2 id="r-title">Hoàn thành bài học!</h2>
-    <p id="r-sub">Anh vừa đọc được biểu đồ nến đầu tiên.</p>
+    <p id="r-sub">Bạn vừa đọc được biểu đồ nến đầu tiên.</p>
     <div class="stats">
       <div class="stat-box gold"><div class="num" id="r-xp">0</div><div class="cap">⚡ XP</div></div>
       <div class="stat-box blue"><div class="num" id="r-acc">0%</div><div class="cap">🎯 Chính xác</div></div>
@@ -606,7 +606,7 @@ function buildUnit3(){
     min:100, max:112, step:0.5, start:101, endL:'$100', endR:'$112',
     readout:v=>`Mục tiêu: <b>$${v.toFixed(1)}</b><br>Lời nếu trúng: <b style="color:#58cc02">$${(v-100).toFixed(1)}</b> = <b>${((v-100)/2).toFixed(1)}R</b>`,
     okMin:104, okMax:112,
-    okText:'Đúng! Mục tiêu $104 = lời $4 = 2R. Với R:R 2:1, anh chỉ cần thắng hơn 34% số lệnh là đã có lãi.',
+    okText:'Đúng! Mục tiêu $104 = lời $4 = 2R. Với R:R 2:1, bạn chỉ cần thắng hơn 34% số lệnh là đã có lãi.',
     badText:'Chưa đủ. Cần lời ≥ 2R, tức mục tiêu từ $104 trở lên (lời $4 = gấp đôi rủi ro $2).'});
 
   // 5. toán của sự sống còn (risk of ruin)
@@ -618,7 +618,7 @@ function buildUnit3(){
 
   // 6. expectancy: win rate không phải tất cả
   L.push({type:'choice', candles:null,
-    prompt:'Anh chỉ THẮNG 40% số lệnh. Nhưng mỗi lệnh thắng ăn 3R, mỗi lệnh thua mất 1R. Dài hạn anh sẽ?', hint:'',
+    prompt:'Bạn chỉ THẮNG 40% số lệnh. Nhưng mỗi lệnh thắng ăn 3R, mỗi lệnh thua mất 1R. Dài hạn bạn sẽ?', hint:'',
     options:['📈 Có lãi đều — vì lời lớn hơn lỗ nhiều','📉 Thua, vì thắng dưới 50%','➖ Hòa vốn'], answer:0,
     okText:'Đúng! Kỳ vọng = 0,4×3 − 0,6×1 = +0,6R mỗi lệnh → LÃI đều. Tỷ lệ thắng KHÔNG quan trọng bằng Lời/Lỗ.',
     badText:'Sai lầm phổ biến! Tính kỳ vọng: 0,4×3 − 0,6×1 = +0,6R/lệnh → vẫn LÃI dù thua nhiều hơn thắng.'});
@@ -737,7 +737,7 @@ function buildUnit5(){
   L.push({type:'choice', candles:null,
     prompt:'Bạn vừa cãi nhau, đang rất căng thẳng. Có nên ngồi vào trade không?', hint:'',
     options:['🚫 Không — cảm xúc mạnh làm quyết định tệ đi. Nghỉ đã','💢 Có, trade giúp xả stress','🍷 Có, mà đánh lớn cho phê'], answer:0,
-    okText:'Đúng! Trạng thái cảm xúc quyết định chất lượng lệnh. Tức giận, mệt, say... đều làm anh đánh tệ. Trader giỏi biết khi nào KHÔNG nên ngồi vào bàn.',
+    okText:'Đúng! Trạng thái cảm xúc quyết định chất lượng lệnh. Tức giận, mệt, say... đều làm bạn đánh tệ. Trader giỏi biết khi nào KHÔNG nên ngồi vào bàn.',
     badText:'Không nên. Cảm xúc mạnh = quyết định tệ. Trade lúc đang căng thẳng là tự đưa tiền cho thị trường. Nghỉ cho tỉnh đã.'});
 
   // 7. greed + leverage
@@ -752,7 +752,7 @@ function buildUnit5(){
     prompt:'Vũ khí mạnh nhất để chống lại cảm xúc khi trade là gì?', hint:'',
     options:['📓 Kế hoạch viết sẵn + nhật ký giao dịch, và kỷ luật tuân theo','🔮 Linh cảm nhạy bén','📣 Theo nhiều hội nhóm tín hiệu'], answer:0,
     okText:'Đúng! Cảm xúc đánh bại trí nhớ và ý chí. Một kế hoạch viết sẵn + nhật ký lại không biết nói dối. Đó chính là nội dung Unit 6 tiếp theo.',
-    badText:'Không. Linh cảm và hội nhóm không cứu được anh lúc hoảng loạn. Thứ cứu anh là KẾ HOẠCH viết sẵn + NHẬT KÝ + kỷ luật (Unit 6).'});
+    badText:'Không. Linh cảm và hội nhóm không cứu được bạn lúc hoảng loạn. Thứ cứu bạn là KẾ HOẠCH viết sẵn + NHẬT KÝ + kỷ luật (Unit 6).'});
 
   return L;
 }
@@ -779,7 +779,7 @@ function buildUnit6(){
   L.push({type:'decision', candles:null, prompt:'Đọc nhật ký một tuần — MẪU LỖI lặp lại là gì?',
     context:'📓 <b>Tổng kết tuần</b><br>3 lệnh thua nặng nhất đều vào lúc <b>23h–24h</b><br>Cả 3 đều mua ĐUỔI sau khi giá đã chạy mạnh<br>Không lệnh nào có trong kế hoạch buổi sáng<br>Cảm xúc: buồn chán, đang lướt điện thoại',
     options:['🌙 FOMO + overtrading buổi tối lúc buồn chán → đặt luật KHÔNG trade sau 22h','🎰 Chỉ là xui, tuần sau sẽ khác','⚡ Cần dùng đòn bẩy cao hơn để gỡ'], answer:0,
-    okText:'Đúng! Nhật ký lộ ra MẪU: cứ buổi tối buồn chán là FOMO mua đuổi ngoài kế hoạch. Tìm ra mẫu rồi → đặt một LUẬT cụ thể (vd cấm trade sau 22h). Đó là cách nhật ký giúp anh tiến bộ.',
+    okText:'Đúng! Nhật ký lộ ra MẪU: cứ buổi tối buồn chán là FOMO mua đuổi ngoài kế hoạch. Tìm ra mẫu rồi → đặt một LUẬT cụ thể (vd cấm trade sau 22h). Đó là cách nhật ký giúp bạn tiến bộ.',
     badText:'Đây không phải xui. Nhật ký cho thấy một MẪU rõ ràng: tối muộn + buồn chán → FOMO mua đuổi. Giải pháp là một luật chặn lại, không phải đòn bẩy cao hơn.'});
 
   // 4. chấm theo quy trình (nối U4)
@@ -814,8 +814,8 @@ function buildUnit6(){
   L.push({type:'choice', candles:null,
     prompt:'Vòng lặp giúp một trader thật sự tiến bộ là gì?', hint:'',
     options:['🔁 Ghi nhật ký → review → tìm lỗi lặp → sửa 1 thứ → lặp lại','📡 Xem thật nhiều tín hiệu và hội nhóm mỗi ngày','🏆 Tìm cho ra chiến lược thắng 100%'], answer:0,
-    okText:'Chính xác — và anh vừa hoàn thành cả 6 unit! Không có chiến lược thắng 100%. Cái đưa anh đi xa là VÒNG LẶP TỰ SỬA này. Giờ là lúc thực hành trên tài khoản demo.',
-    badText:'Không. Tín hiệu hay "chén thánh" không làm anh giỏi lên. Thứ làm anh tiến bộ là vòng lặp: nhật ký → review → tìm lỗi → sửa 1 thứ → lặp lại.'});
+    okText:'Chính xác — và bạn vừa hoàn thành cả 6 unit! Không có chiến lược thắng 100%. Cái đưa bạn đi xa là VÒNG LẶP TỰ SỬA này. Giờ là lúc thực hành trên tài khoản demo.',
+    badText:'Không. Tín hiệu hay "chén thánh" không làm bạn giỏi lên. Thứ làm bạn tiến bộ là vòng lặp: nhật ký → review → tìm lỗi → sửa 1 thứ → lặp lại.'});
 
   return L;
 }
@@ -824,18 +824,18 @@ function buildUnit6(){
 let CURRENT_UNIT = 1;
 const BUILDERS = { 1:buildUnit1, 2:buildUnit2, 3:buildUnit3, 4:buildUnit4, 5:buildUnit5, 6:buildUnit6 };
 const SUBTITLE = {
-  1:'Anh vừa đọc được biểu đồ nến đầu tiên.',
-  2:'Anh vừa đọc được cấu trúc thị trường.',
-  3:'Anh vừa nắm được xương sống của sự sống còn.',
-  4:'Anh vừa tư duy như một trader thật — theo quy trình, không theo kết quả.',
-  5:'Anh vừa học cách không để cảm xúc phá hỏng kế hoạch.',
-  6:'🎓 Anh đã hoàn thành cả 6 unit nền tảng. Giờ là lúc thực hành thật (demo).',
+  1:'Bạn vừa đọc được biểu đồ nến đầu tiên.',
+  2:'Bạn vừa đọc được cấu trúc thị trường.',
+  3:'Bạn vừa nắm được xương sống của sự sống còn.',
+  4:'Bạn vừa tư duy như một trader thật — theo quy trình, không theo kết quả.',
+  5:'Bạn vừa học cách không để cảm xúc phá hỏng kế hoạch.',
+  6:'🎓 Bạn đã hoàn thành cả 6 unit nền tảng. Giờ là lúc thực hành thật (demo).',
 };
 const TAKEAWAY = {
   1:'<b>💡 Bài học rút ra:</b> Đọc được nến mới chỉ là bước 1. '+
     'Điều quan trọng nhất sắp tới (Unit 3): <b>quản lý rủi ro</b>. '+
     'Vì một quyết định ĐÚNG vẫn có thể thua — và đó là chuyện bình thường trong trade.',
-  2:'<b>💡 Bài học rút ra:</b> Đọc cấu trúc giúp anh biết thị trường ĐANG ở đâu — tăng, giảm hay đi ngang, '+
+  2:'<b>💡 Bài học rút ra:</b> Đọc cấu trúc giúp bạn biết thị trường ĐANG ở đâu — tăng, giảm hay đi ngang, '+
     'và khi nào trend có nguy cơ đảo. Bước tới <b>Unit 3 — Quản lý rủi ro</b>: biết cấu trúc rồi, '+
     'vẫn phải biết đặt cược BAO NHIÊU cho an toàn.',
   3:'<b>💡 Bài học rút ra:</b> Công thức xương sống: <b>Khối lượng = (Vốn × %rủi ro) ÷ khoảng cách stop</b>. '+
@@ -847,9 +847,9 @@ const TAKEAWAY = {
   5:'<b>💡 Bài học rút ra:</b> Kẻ thù lớn nhất của trader là chính cảm xúc của mình — FOMO, gỡ gạc, tham, sợ. '+
     'Không diệt được cảm xúc, chỉ có thể <b>không hành động theo nó</b> bằng kế hoạch + kỷ luật. '+
     'Bước tới <b>Unit 6 — Nhật ký</b>: công cụ biến kỷ luật thành thói quen.',
-  6:'<b>🎓 Chúc mừng — anh đã đi hết 6 unit nền tảng!</b> Nhưng đây mới là bệ phóng, không phải đích. '+
+  6:'<b>🎓 Chúc mừng — bạn đã đi hết 6 unit nền tảng!</b> Nhưng đây mới là bệ phóng, không phải đích. '+
     'Kỹ năng thật đến từ <b>thực hành trên tài khoản DEMO</b> + ghi nhật ký + lặp lại vòng tự sửa. '+
-    'Không có chén thánh; chỉ có quy trình tốt lặp đủ lâu. Chúc anh trade an toàn và kỷ luật.',
+    'Không có chén thánh; chỉ có quy trình tốt lặp đủ lâu. Chúc bạn trade an toàn và kỷ luật.',
 };
 
 /* ---------- Vòng chơi ---------- */
